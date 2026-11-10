@@ -1,0 +1,11 @@
+{
+  "appId": "com.drsamonline.lofistudio",
+  "appName": "Lofi Studio Pro",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": { "androidScheme": "https" },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#12101a"
+  }
+}

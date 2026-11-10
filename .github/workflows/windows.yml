@@ -1,0 +1,61 @@
+name: Windows build
+
+# Builds a Windows .exe from the web app with Tauri. Tauri wraps the existing
+# static files in the system WebView2, so the binary stays a few megabytes
+# instead of shipping a whole browser engine.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Install Tauri CLI
+        run: npm install --no-audit --no-fund
+
+      - name: Scaffold the Tauri shell (first run only)
+        run: |
+          if (!(Test-Path src-tauri)) {
+            npx tauri init --app-name "Lofi Studio Pro" `
+              --window-title "Lofi Studio Pro" `
+              --frontend-dist "../" `
+              --dev-url "http://localhost:8000" `
+              --before-dev-command "" --before-build-command "" --ci
+          }
+
+      - name: Build
+        run: npx tauri build
+
+      - name: Collect artefacts
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Get-ChildItem -Recurse -Include *.exe,*.msi -Path src-tauri/target/release |
+            Where-Object { $_.FullName -notmatch 'deps|build' } |
+            ForEach-Object { Copy-Item $_.FullName -Destination "out/$($_.Name)" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lofi-studio-pro-windows
+          path: out/*
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*

@@ -1,0 +1,26 @@
+{
+  "name": "lofi-studio-pro",
+  "version": "2.0.0",
+  "private": true,
+  "description": "A lofi beat machine that runs entirely in the browser. Six tracks, nine ambience layers, live tape chain, offline-first PWA.",
+  "homepage": "https://drsamonline.github.io/lofi-studio-pro/",
+  "repository": { "type": "git", "url": "https://github.com/drsamonline/lofi-studio-pro.git" },
+  "license": "SEE LICENSE IN LICENSE",
+  "author": { "name": "Dr Sohil Momin", "url": "https://github.com/drsamonline" },
+  "keywords": ["lofi", "beat", "sequencer", "tonejs", "pwa", "web-audio", "offline"],
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "python3 tests/run_browser_tests.py",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "android:debug": "cd android && ./gradlew assembleDebug",
+    "tauri:init": "npx tauri init",
+    "tauri:build": "npx tauri build"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/android": "^6.1.2",
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

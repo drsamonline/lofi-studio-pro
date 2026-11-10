@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="purple">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lofi Studio Pro — a lofi beat machine in your browser</title>
+<meta name="description" content="A 16-step lofi beat machine that runs entirely in your browser. Six tracks, ten patterns, twelve chord sets, nine ambience layers and a live tape chain. Free, offline, no account.">
+<meta name="theme-color" content="#12101a">
+<meta name="color-scheme" content="dark light">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lofi Studio">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="Lofi Studio Pro">
+<meta property="og:description" content="A 16-step lofi beat machine in your browser. Six tracks, nine ambience layers, live tape chain. Works offline.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="./screenshots/desktop.png">
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+
+<div id="loader"><div class="loader-mark"></div></div>
+
+<div class="app">
+
+  <!-- ------------------------------------------------------------- topbar -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">Lofi Studio <b>Pro</b></span>
+    </div>
+    <div class="top-tools">
+      <button id="btn-install" class="btn btn-sm" type="button" hidden>Install</button>
+      <div class="tp-group" title="Master volume">
+        <span class="vol-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 9.5h3L12 5v14l-5-4.5H4z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></span>
+        <div id="vol-knob"></div>
+      </div>
+      <button id="btn-record" class="icon" type="button" aria-label="Record a take" aria-pressed="false" title="Record (R)">
+        <span class="rec-dot"></span>
+        <span class="rec-time" id="rec-time"></span>
+      </button>
+      <button id="btn-panic" class="icon danger" type="button" aria-label="Stop all audio" title="Stop everything (X)">
+        <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- --------------------------------------------------------------- rail -->
+  <nav class="rail" aria-label="Sections">
+    <button class="navbtn active" type="button" data-view="studio" aria-current="page">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Studio
+    </button>
+    <button class="navbtn" type="button" data-view="mix">
+      <svg viewBox="0 0 24 24"><path d="M6 20V10M6 6V4M12 20v-6M12 10V4M18 20v-9M18 7V4"/><circle cx="6" cy="8" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="9" r="1.6"/></svg>
+      Mix
+    </button>
+    <button class="navbtn" type="button" data-view="amb">
+      <svg viewBox="0 0 24 24"><path d="M4 15a4 4 0 0 1 .6-7.9A5.5 5.5 0 0 1 15.4 6a4.5 4.5 0 0 1 1.1 8.9"/><path d="M8 19h8M10 22h4"/></svg>
+      Ambience
+    </button>
+    <button class="navbtn" type="button" data-view="themes">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg>
+      Themes
+    </button>
+    <button class="navbtn" type="button" data-view="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7"/></svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- -------------------------------------------------------------- stage -->
+  <main class="stage" id="stage">
+
+    <!-- studio ------------------------------------------------------ -->
+    <section class="view" id="view-studio" aria-label="Studio">
+      <div class="pill-row" id="presets" aria-label="Activity presets"></div>
+
+      <div class="viz-wrap"><canvas id="viz" aria-hidden="true"></canvas></div>
+
+      <div class="block">
+        <div class="block-head">
+          <span class="block-title">Sequencer</span>
+          <span class="head-right">
+            <span class="readout" id="readout" aria-hidden="true">1·1</span>
+            <button id="btn-fill" class="toggle-chip" type="button" aria-pressed="false">Auto fill</button>
+          </span>
+        </div>
+        <div class="seq-scroll">
+          <div class="seq" id="seq" role="grid" aria-label="16 step sequencer, six tracks"></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><span class="block-title">Pattern</span></div>
+        <div class="chip-row" id="patterns" aria-label="Drum patterns"></div>
+        <div class="block-head" style="margin-top:14px"><span class="block-title">Chords</span></div>
+        <div class="chip-row" id="vibes" aria-label="Chord sets"></div>
+      </div>
+    </section>
+
+    <!-- mix --------------------------------------------------------- -->
+    <section class="view" id="view-mix" aria-label="Mixer and effects" hidden>
+      <div class="block">
+        <div class="block-head"><span class="block-title">Mixer</span></div>
+        <div class="faders" id="faders"></div>
+      </div>
+      <div class="block">
+        <div class="block-head"><span class="block-title">Tape chain</span></div>
+        <div class="fx-grid" id="fx-knobs"></div>
+      </div>
+    </section>
+
+    <!-- ambience ---------------------------------------------------- -->
+    <section class="view" id="view-amb" aria-label="Ambience" hidden>
+      <div class="amb-grid" id="amb-grid"></div>
+    </section>
+
+    <!-- themes ------------------------------------------------------ -->
+    <section class="view" id="view-themes" aria-label="Themes" hidden>
+      <div class="themes-grid" id="themes-grid"></div>
+    </section>
+
+    <!-- settings ---------------------------------------------------- -->
+    <section class="view" id="view-settings" aria-label="Settings" hidden>
+      <div class="block">
+        <div class="rows">
+          <div class="row">
+            <div class="row-text"><strong>Auto-save</strong><span>Keep your pattern on this device</span></div>
+            <button id="set-autosave" class="switch" type="button" role="switch" aria-checked="true" aria-label="Auto-save"></button>
+          </div>
+          <div class="row">
+            <div class="row-text"><strong>Auto drum fill</strong><span>Snare roll on the last bar of every four</span></div>
+            <button id="set-autofill" class="switch" type="button" role="switch" aria-checked="false" aria-label="Auto drum fill"></button>
+          </div>
+          <div class="row">
+            <div class="row-text"><strong>Visualiser</strong><span>Waveform or spectrum</span></div>
+            <button id="set-viz" class="btn btn-sm" type="button">Waveform</button>
+          </div>
+          <div class="row">
+            <div class="row-text"><strong>Debug logging</strong><span>Print engine events to the console</span></div>
+            <button id="set-debug" class="switch" type="button" role="switch" aria-checked="false" aria-label="Debug logging"></button>
+          </div>
+        </div>
+        <p class="about" id="storage-info" style="margin-top:10px"></p>
+      </div>
+
+      <div class="block">
+        <div class="rows">
+          <div class="row">
+            <div class="row-text"><strong>Surprise me</strong><span>New pattern, chords, tempo and theme</span></div>
+            <button id="btn-surprise" class="btn btn-sm btn-primary" type="button">Roll</button>
+          </div>
+          <div class="row">
+            <div class="row-text"><strong>Reset everything</strong><span>Clears the pattern and every setting</span></div>
+            <button id="btn-reset" class="btn btn-sm btn-danger" type="button">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="about">
+          <strong style="color:var(--text)">Lofi Studio Pro</strong> — every sound is synthesised in your browser.
+          Nothing is streamed, nothing is uploaded, no account. Built with
+          <a href="https://tonejs.github.io/" rel="noopener">Tone.js</a>.
+        </p>
+        <p class="about" style="margin-top:8px">
+          Shortcuts: <b>Space</b> play · <b>S</b> surprise · <b>B</b> theme · <b>R</b> record · <b>X</b> stop all.
+          Arrow keys move around the sequencer.
+        </p>
+        <p class="about" style="margin-top:8px">Build 2.0.0</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ---------------------------------------------------------- transport -->
+  <footer class="transport">
+    <button id="btn-play" class="play" type="button" aria-label="Play">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+    </button>
+
+    <div class="tp-group">
+      <div class="bpm">
+        <button id="btn-bpm-down" type="button" aria-label="Tempo down">−</button>
+        <span class="bpm-num" id="bpm-num">80</span>
+        <button id="btn-bpm-up" type="button" aria-label="Tempo up">+</button>
+      </div>
+      <span class="tp-label">BPM</span>
+    </div>
+
+    <button id="btn-tap" class="tap" type="button" aria-label="Tap tempo">TAP</button>
+
+    <div class="tp-group tp-swing">
+      <div id="swing-knob"></div>
+      <span class="tp-label">Swing</span>
+    </div>
+
+    <div class="tp-spacer"></div>
+
+    <div class="tp-info">
+      <strong id="np-pattern">Chill Hop</strong>
+      <span id="np-vibe">Jazz</span>
+    </div>
+  </footer>
+
+  <!-- ------------------------------------------------------------- tabbar -->
+  <nav class="tabbar" aria-label="Sections">
+    <button class="navbtn active" type="button" data-view="studio" aria-current="page">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Studio
+    </button>
+    <button class="navbtn" type="button" data-view="mix">
+      <svg viewBox="0 0 24 24"><path d="M6 20V10M6 6V4M12 20v-6M12 10V4M18 20v-9M18 7V4"/><circle cx="6" cy="8" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="9" r="1.6"/></svg>
+      Mix
+    </button>
+    <button class="navbtn" type="button" data-view="amb">
+      <svg viewBox="0 0 24 24"><path d="M4 15a4 4 0 0 1 .6-7.9A5.5 5.5 0 0 1 15.4 6a4.5 4.5 0 0 1 1.1 8.9"/><path d="M8 19h8M10 22h4"/></svg>
+      Ambience
+    </button>
+    <button class="navbtn" type="button" data-view="themes">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg>
+      Themes
+    </button>
+    <button class="navbtn" type="button" data-view="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7"/></svg>
+      Settings
+    </button>
+  </nav>
+
+</div>
+
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script src="./vendor/tone.min.js"></script>
+<script src="./js/data.js"></script>
+<script src="./js/state.js"></script>
+<script src="./js/audio.js"></script>
+<script src="./js/ui.js"></script>
+<script src="./js/main.js"></script>
+</body>
+</html>

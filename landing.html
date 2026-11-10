@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lofi Studio Pro — a lofi beat machine in your browser</title>
+<meta name="description" content="Six tracks, sixteen steps, nine ambience layers and a live tape chain. A lofi beat machine that runs entirely in your browser, works offline, and asks for nothing.">
+<meta property="og:title" content="Lofi Studio Pro">
+<meta property="og:description" content="A lofi beat machine that runs entirely in your browser. No account, no samples, no server.">
+<meta property="og:image" content="./screenshots/desktop.png">
+<meta name="theme-color" content="#12101a">
+<link rel="icon" href="./icons/icon-192.png">
+<style>
+  :root {
+    --bg: #0e0c15;
+    --panel: #17141f;
+    --line: #2a2537;
+    --text: #f2f0f7;
+    --dim: #9a94ad;
+    --acc: #e94560;
+    --acc2: #533483;
+    --max: 1080px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.55;
+  }
+  a { color: inherit; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 22px; }
+  .glow {
+    position: fixed; inset: -20% -10% auto -10%; height: 70vh; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(45% 55% at 22% 12%, rgba(233,69,96,.28), transparent 70%),
+      radial-gradient(45% 55% at 78% 4%, rgba(83,52,131,.5), transparent 70%);
+    filter: blur(8px);
+  }
+  header { padding: 22px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: -.01em; text-decoration: none; }
+  .mark {
+    width: 30px; height: 30px; border-radius: 9px; position: relative;
+    background: linear-gradient(135deg, var(--acc), var(--acc2));
+    box-shadow: 0 0 18px -3px var(--acc); display: grid; place-items: center;
+  }
+  .mark::before { content: ""; width: 13px; height: 13px; border-radius: 50%; border: 1.6px solid #fff; }
+  .mark::after { content: ""; position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
+  nav { display: flex; gap: 20px; font-size: 13.5px; color: var(--dim); }
+  nav a { text-decoration: none; }
+  nav a:hover { color: var(--text); }
+
+  .hero { padding: 54px 0 40px; text-align: center; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: .04em;
+    color: var(--dim); border: 1px solid var(--line);
+    background: rgba(255,255,255,.03); padding: 6px 13px; border-radius: 999px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+  h1 {
+    font-size: clamp(38px, 6.4vw, 68px); line-height: 1.02; letter-spacing: -.035em;
+    margin: 22px 0 0; font-weight: 750;
+  }
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(100deg, var(--acc), #ff9aa9 45%, var(--acc2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { font-size: clamp(15px, 2vw, 19px); color: var(--dim); max-width: 620px; margin: 20px auto 0; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    min-height: 50px; padding: 0 24px; border-radius: 12px;
+    font-size: 15px; font-weight: 650; text-decoration: none;
+    border: 1px solid var(--line); background: var(--panel);
+    transition: transform .12s ease, filter .16s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--acc), var(--acc2));
+    border-color: transparent; color: #fff;
+    box-shadow: 0 10px 30px -12px var(--acc);
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn svg { width: 17px; height: 17px; fill: currentColor; }
+  .meta { margin-top: 16px; font-size: 12.5px; color: var(--dim); }
+
+  .shot {
+    margin: 44px auto 0; max-width: 980px; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--line); box-shadow: 0 40px 90px -40px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03) inset;
+    background: var(--panel);
+  }
+  .shot img { display: block; width: 100%; }
+
+  section { padding: 64px 0; }
+  h2 { font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -.025em; margin: 0 0 8px; font-weight: 700; }
+  .lead { color: var(--dim); max-width: 620px; margin: 0 0 34px; font-size: 15.5px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px;
+    transition: border-color .16s, transform .16s;
+  }
+  .card:hover { border-color: #3a3350; transform: translateY(-2px); }
+  .card h3 { margin: 12px 0 6px; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+  .card p { margin: 0; font-size: 13.5px; color: var(--dim); line-height: 1.6; }
+  .ico {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: rgba(233,69,96,.12); border: 1px solid rgba(233,69,96,.28);
+  }
+  .ico svg { width: 18px; height: 18px; fill: none; stroke: var(--acc); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+  .split { display: grid; grid-template-columns: 1.1fr .9fr; gap: 34px; align-items: center; }
+  .split img { width: 100%; border-radius: 14px; border: 1px solid var(--line); display: block; }
+  .phone { max-width: 280px; margin: 0 auto; }
+  ul.ticks { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 11px; }
+  ul.ticks li { display: flex; gap: 10px; font-size: 14px; color: #cfcadb; }
+  ul.ticks svg { width: 17px; height: 17px; flex: none; margin-top: 3px; stroke: #4ade80; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .spec { background: var(--panel); padding: 18px; }
+  .spec b { display: block; font-size: 22px; letter-spacing: -.02em; }
+  .spec span { font-size: 12px; color: var(--dim); }
+
+  .quote { border-left: 2px solid var(--acc); padding: 4px 0 4px 18px; color: #d8d3e4; font-size: 15px; max-width: 660px; }
+
+  .banner {
+    border: 1px solid var(--line); border-radius: 16px; padding: 30px; text-align: center;
+    background: linear-gradient(160deg, rgba(233,69,96,.14), rgba(83,52,131,.18));
+  }
+  .banner h2 { margin-bottom: 6px; }
+  .banner p { color: var(--dim); margin: 0 0 22px; font-size: 14.5px; }
+
+  footer { border-top: 1px solid var(--line); padding: 34px 0 46px; margin-top: 30px; }
+  .foot { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--dim); }
+  .foot a { text-decoration: none; color: var(--dim); }
+  .foot a:hover { color: var(--text); }
+  .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+
+  @media (max-width: 780px) {
+    nav { display: none; }
+    .split { grid-template-columns: 1fr; gap: 24px; }
+    section { padding: 46px 0; }
+    .hero { padding: 34px 0 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<div class="wrap">
+  <header>
+    <a class="brand" href="./index.html"><span class="mark" aria-hidden="true"></span> Lofi Studio Pro</a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#offline">Offline</a>
+      <a href="#licence">Licence</a>
+      <a href="https://github.com/drsamonline/lofi-studio-pro">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <span class="eyebrow"><span class="dot"></span> Works offline · no account · no samples</span>
+    <h1>Make a lofi beat<br><em>before the kettle boils.</em></h1>
+    <p class="sub">
+      Six tracks, sixteen steps, nine ambience layers and a live tape chain — every sound synthesised in your browser.
+      No login, no library, no “start a project”. One screen, one sound, immediately.
+    </p>
+    <div class="cta">
+      <a class="btn btn-primary" href="./index.html">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+        Open the app
+      </a>
+      <a class="btn" href="https://github.com/drsamonline/lofi-studio-pro">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.85-2.34 4.7-4.57 4.95.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>
+        Source
+      </a>
+    </div>
+    <p class="meta">Free for personal use · installs to your home screen · about 120 KB of code</p>
+  </div>
+
+  <div class="shot"><img src="screenshots/desktop.png" alt="Lofi Studio Pro running on a desktop, showing the sixteen-step sequencer"></div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Everything a loop needs, nothing else</h2>
+    <p class="lead">No plugin browser, no piano roll, no onboarding tour. The controls you need to turn a pattern into a mood, and a panic button for when it goes wrong.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+        <h3>Six tracks, sixteen steps</h3>
+        <p>Kick, snare, hat, bass, keys and melody. Ten patterns and twelve four-bar chord progressions to start from, or tap your own.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 20V10M6 6V4M12 20v-6M12 10V4M18 20v-9M18 7V4"/><circle cx="6" cy="8" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="9" r="1.6"/></svg></div>
+        <h3>A tape chain, not a plugin list</h3>
+        <p>Low-pass, saturation, vinyl crackle, reverb, chorus and wow-and-flutter — six knobs that turn clean into cassette.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 15a4 4 0 0 1 .6-7.9A5.5 5.5 0 0 1 15.4 6a4.5 4.5 0 0 1 1.1 8.9"/><path d="M8 19h8"/></svg></div>
+        <h3>Nine ambience layers</h3>
+        <p>Rain, fireplace, cafe, wind, birds, thunder, ocean, night and vinyl. Mix them under the beat, or on their own with the drums stopped.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.3" fill="currentColor"/><circle cx="15" cy="9" r="1.3" fill="currentColor"/><circle cx="9" cy="15" r="1.3" fill="currentColor"/></svg></div>
+        <h3>Ten themes, including light</h3>
+        <p>From a near-black studio to paper-white daytime. One attribute swap, no reload, no flash.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Record a take</h3>
+        <p>Hit record, let it run, get a file. Everything you hear — beat, tape, rain — lands in one download.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg></div>
+        <h3>Installs like an app</h3>
+        <p>Add it to your home screen and it opens full-screen, from cache, with the aeroplane mode still on.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="offline">
+  <div class="wrap split">
+    <div>
+      <h2>It works on a plane</h2>
+      <p class="lead">The whole instrument — including the audio library — is precached on your first visit. After that, the network is somebody else's problem.</p>
+      <ul class="ticks">
+        <li><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg><span>No samples to download: every kick, hat and chord is generated by an oscillator at runtime.</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Audio library served from the same folder as the app, so a blocked CDN cannot leave you with a silent page.</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Your pattern lives in local storage on your device — nothing is uploaded, nothing is tracked.</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg><span>No accounts, no cookies, no analytics. There is nothing to sign up for and nothing to delete.</span></li>
+      </ul>
+    </div>
+    <div class="phone"><img src="screenshots/mobile.png" alt="Lofi Studio Pro on a phone"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Small on purpose</h2>
+    <p class="lead">One HTML file, five plain scripts, one vendored library. No framework, no bundler, no dependency tree to keep patched.</p>
+    <div class="specs">
+      <div class="spec"><b>6 × 16</b><span>tracks × steps</span></div>
+      <div class="spec"><b>10</b><span>patterns</span></div>
+      <div class="spec"><b>12</b><span>chord sets</span></div>
+      <div class="spec"><b>9</b><span>ambience layers</span></div>
+      <div class="spec"><b>10</b><span>themes</span></div>
+      <div class="spec"><b>75</b><span>browser tests</span></div>
+    </div>
+    <p class="quote" style="margin-top:32px">
+      “Every sound is synthesised in the browser. That is not a technical detail — it is the reason the whole thing fits on one screen and opens in a second.”
+    </p>
+  </div>
+</section>
+
+<section id="licence">
+  <div class="wrap">
+    <div class="banner">
+      <h2>Free for personal use</h2>
+      <p>PolyForm Noncommercial 1.0.0 — use it, change it and share it for study, hobby work, teaching or anything else that is not commercial. Commercial use needs a separate licence; just ask.</p>
+      <div class="cta" style="margin-top:0">
+        <a class="btn btn-primary" href="./index.html">Open the app</a>
+        <a class="btn" href="https://github.com/drsamonline/lofi-studio-pro/blob/main/LICENSE">Read the licence</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div>
+      <strong style="color:var(--text)">Lofi Studio Pro</strong> · v2.0.0<br>
+      Built by <a href="https://github.com/drsamonline">Dr Sohil Momin</a>
+    </div>
+    <div class="foot-links">
+      <a href="./index.html">App</a>
+      <a href="https://github.com/drsamonline/lofi-studio-pro">GitHub</a>
+      <a href="https://github.com/drsamonline/lofi-studio-pro/blob/main/ROADMAP.md">Roadmap</a>
+      <a href="https://github.com/drsamonline/lofi-studio-pro/blob/main/ATTRIBUTION.md">Attribution</a>
+      <a href="https://github.com/sponsors/drsamonline">Sponsor</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
