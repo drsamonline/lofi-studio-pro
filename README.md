@@ -124,12 +124,15 @@ Results: **[docs/TEST-REPORT.md](docs/TEST-REPORT.md)** — 75 passing, 0 failin
 
 ## Native builds
 
-The web app is the source of truth. Wrappers for Android and Windows live in CI rather than in this repository, so nothing has to be installed locally:
+The web app is the source of truth; the wrappers are thin and live in CI, so nothing has to be installed locally and no stale binary is ever committed.
 
-- `.github/workflows/android.yml` builds a **debug APK** with Capacitor (Actions → *Android build* → Run workflow, or push a tag).
-- `.github/workflows/windows.yml` builds a **Windows executable** with Tauri.
+| Target | How | Status |
+| --- | --- | --- |
+| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor and assembles a debug APK | **Built** — `lofi-studio-pro-2.0.0-debug.apk` (3.8 MB) is attached to the [v2.0.0 release](https://github.com/drsamonline/lofi-studio-pro/releases/tag/v2.0.0) |
+| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2, so the binary stays small) | **Scaffolding** — the workflow has not been run yet; treat the first run as a smoke test |
+| **PWA** | The live site installs to any home screen | **Tested** — this is the build the 75 browser checks run against |
 
-Both artefacts are attached to a release when you push a tag. They are not committed to the repository, because a checked-in binary nobody rebuilt is worse than no binary at all.
+The APK is a debug build, signed with the default debug key, so it installs from a file but cannot go to the Play Store as-is. For a release build you need your own keystore; add it as repository secrets and a `signingConfig` to `android/app/build.gradle`.
 
 ## Roadmap
 
