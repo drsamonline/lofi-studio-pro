@@ -19,9 +19,15 @@ jobs:
       - name: Install dependencies
         run: pip install websocket-client
 
+      - name: Locate Chrome
+        run: |
+          for b in /usr/bin/google-chrome /usr/bin/google-chrome-stable \
+                   /usr/bin/chromium-browser /usr/bin/chromium; do
+            if [ -x "$b" ]; then echo "CHROME_BIN=$b" >> "$GITHUB_ENV"; break; fi
+          done
+          echo "using ${CHROME_BIN:-none}"
+
       - name: Run the browser suite
-        env:
-          CHROME_BIN: /usr/bin/google-chrome
         run: python3 tests/run_browser_tests.py
 
       - uses: actions/upload-artifact@v4
