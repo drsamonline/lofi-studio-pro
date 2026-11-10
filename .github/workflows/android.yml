@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+env:
+  ANDROID_HOME: /usr/local/lib/android/sdk
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -27,32 +31,35 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
       - name: Install Capacitor
-        run: |
-          npm install --no-audit --no-fund
-          npx cap add android || true
+        run: npm install --no-audit --no-fund --omit=optional
 
-      - name: Sync the web build into the native shell
+      - name: Stage the web app
+        run: sh scripts/build-web.sh
+
+      - name: Create the native shell
+        run: npx cap add android
+
+      - name: Sync the web build into it
         run: npx cap sync android
 
       - name: Assemble debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Rename and upload
+      - name: Collect
         run: |
           mkdir -p out
           cp android/app/build/outputs/apk/debug/app-debug.apk \
-             out/lofi-studio-pro-${{ github.ref_name }}.apk
+             "out/lofi-studio-pro-${GITHUB_REF_NAME}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
           name: lofi-studio-pro-apk
           path: out/*.apk
+          if-no-files-found: error
 
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')
