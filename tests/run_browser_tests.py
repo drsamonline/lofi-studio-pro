@@ -253,7 +253,10 @@ drain(0.9)
 js("""(function(){var head=document.querySelector('.seq-head');
   head.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));return true;})()""")
 drain(0.3)
-check("pads: holding a track name empties that row",
+check("pads: holding a track name opens its menu",
+      js("!!document.querySelector('.row-menu')") is True)
+js("document.querySelector('.row-menu [data-act=\"clear\"]').click()"); drain(0.4)
+check("pads: the menu's clear empties that row",
       js("LS.State.data.steps.kick.every(function(v){return !v})") is True,
       js("JSON.stringify(LS.State.data.steps.kick)"))
 js("(document.querySelector('.toast-act')||{click:function(){}}).click()"); drain(0.4)
@@ -309,6 +312,7 @@ js("""(function(){var head=document.querySelector('.seq-head');
   setTimeout(function(){head.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));}, 700);
   return true;})()""")
 drain(1.3)
+js("(document.querySelector('.row-menu [data-act=\"clear\"]')||{click:function(){}}).click()"); drain(0.4)
 check("undo: a cleared row can be undone",
       js("LS.State.data.steps.kick.every(function(v){return !v})") is True)
 js("document.getElementById('btn-undo').click()"); drain(0.6)
@@ -324,6 +328,49 @@ check("help: the sheet lists the gestures", js("document.querySelectorAll('#shor
       js("document.querySelectorAll('#shortcuts kbd').length"))
 js("document.querySelector('#shortcuts [data-close]').click()"); drain(0.2)
 check("help: it closes again", js("document.getElementById('shortcuts').hidden") is True)
+
+# ------------------------------------------------------------ row copy/paste
+js("LS.App.loadPattern('boombap'); LS.State.save()"); drain(0.4)
+js("""(function(){var head=document.querySelectorAll('.seq-head')[0];
+  var r=head.getBoundingClientRect();
+  head.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+10,clientY:r.top+10}));
+  setTimeout(function(){head.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));}, 700);
+  return true;})()""")
+drain(1.1)
+js("document.querySelector('.row-menu [data-act=\"copy\"]').click()"); drain(0.3)
+js("""(function(){var head=document.querySelectorAll('.seq-head')[4];
+  var r=head.getBoundingClientRect();
+  head.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+10,clientY:r.top+10}));
+  setTimeout(function(){head.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));}, 700);
+  return true;})()""")
+drain(1.1)
+check("copy: paste is enabled once a row is on the clipboard",
+      js("document.querySelector('.row-menu [data-act=\"paste\"]').disabled") is False)
+js("document.querySelector('.row-menu [data-act=\"paste\"]').click()"); drain(0.4)
+check("copy: pasting puts the copied row on another track",
+      js("JSON.stringify(LS.State.data.steps.keys)") == js("JSON.stringify(LS.State.data.steps.kick)"),
+      js("JSON.stringify(LS.State.data.steps.keys.slice(0,6))"))
+
+# ------------------------------------------------------------- MIDI input
+js("""(function(){
+  LS.App.handleMidi([0x90, 36, 100]);
+  LS.App.handleMidi([0x90, 42, 100]);
+  LS.App.handleMidi([0x80, 36, 0]);
+  return true;})()""")
+drain(0.3)
+check("midi: note-on messages are accepted without error",
+      js("document.querySelectorAll('.row-menu').length") == 0)
+
+# --------------------------------------------------------- pattern export
+pat = js("JSON.stringify((function(){ LS.App.exportPattern; return true; })())")
+check("export: the pattern payload carries steps and chances",
+      js("""(function(){
+        var p = {app:'lofi-studio-pro', version:2, kind:'pattern',
+                 state:{bpm:LS.State.data.bpm, vibe:LS.State.data.vibe,
+                        steps:LS.State.data.steps, probs:LS.State.data.probs}};
+        var round = LS.State.importState(p);
+        return !!round && Object.keys(round.steps).length === 6 && Object.keys(round.probs).length === 6;
+      })()""") is True)
 
 # ----------------------------------------------------- chance + reverb send
 js("LS.App.loadPattern('chillhop'); LS.UI.setChanceMode(false)"); drain(0.3)

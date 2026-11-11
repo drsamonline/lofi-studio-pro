@@ -431,6 +431,83 @@
     UI.toast('Pattern cleared — Ctrl+Z to undo', 'info');
   }
 
+  /* ---------------------------------------------------------------- MIDI in
+     A keyboard or pad controller plays the voices. Note numbers follow the
+     General MIDI drum map, so any controller works without configuration. */
+  var MIDI_MAP = { 36: 'kick', 35: 'kick', 38: 'snare', 40: 'snare', 39: 'snare',
+                   42: 'hat', 44: 'hat', 46: 'hat', 48: 'bass',
+                   60: 'keys', 62: 'keys', 64: 'keys', 72: 'melody', 74: 'melody', 76: 'melody' };
+  var midiAccess = null;
+
+  function handleMidi(data) {
+    if (!data || data.length < 3) return;
+    var cmd = data[0] & 0xf0;
+    if (cmd !== 0x90 || data[2] === 0) return;
+    var id = MIDI_MAP[data[1]];
+    if (!id) return;
+    A.audition(id);
+    UI.flashTrack(id);
+    haptic(6);
+  }
+
+  async function toggleMidi() {
+    if (midiAccess) {
+      if (midiAccess.inputs) {
+        midiAccess.inputs.forEach(function (input) { input.onmidimessage = null; });
+      }
+      midiAccess = null;
+      S.data.midi = false;
+      UI.paintSettings();
+      S.saveSoon();
+      UI.toast('MIDI input off', 'info');
+      return;
+    }
+    if (!navigator.requestMIDIAccess) { UI.toast('This browser has no Web MIDI', 'warn'); return; }
+    try {
+      midiAccess = await navigator.requestMIDIAccess();
+      var count = 0;
+      midiAccess.inputs.forEach(function (input) {
+        input.onmidimessage = function (e) { handleMidi(e.data); };
+        count++;
+      });
+      S.data.midi = true;
+      UI.paintSettings();
+      S.saveSoon();
+      UI.toast(count ? count + ' MIDI input' + (count > 1 ? 's' : '') + ' connected'
+                     : 'MIDI armed — plug in a controller', 'success');
+    } catch (e) {
+      UI.toast('MIDI permission refused', 'error');
+    }
+  }
+
+  /* The pattern on its own: steps, chances, tempo and chords. No mix, no FX,
+     so it can be handed to someone without also handing them your sound. */
+  function exportPattern() {
+    var payload = {
+      app: 'lofi-studio-pro',
+      version: 2,
+      kind: 'pattern',
+      exported: new Date().toISOString(),
+      state: {
+        bpm: S.data.bpm,
+        vibe: S.data.vibe,
+        patternId: S.data.patternId,
+        steps: JSON.parse(JSON.stringify(S.data.steps)),
+        probs: JSON.parse(JSON.stringify(S.data.probs))
+      }
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'lofi-pattern-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    UI.toast('Pattern exported', 'success');
+  }
+
   function importFile(file) {
     if (!file) return;
     if (file.size > 512 * 1024) { UI.toast('That file is too large to be a beat', 'error'); return; }
@@ -596,6 +673,8 @@
     });
     $('btn-export').addEventListener('click', exportFile);
     $('btn-midi').addEventListener('click', exportMidi);
+    $('btn-export-pattern').addEventListener('click', exportPattern);
+    $('set-midi').addEventListener('click', toggleMidi);
     $('btn-clear').addEventListener('click', clearPattern);
     $('btn-song').addEventListener('click', toggleSong);
     $('btn-chance').addEventListener('click', function () {
@@ -895,6 +974,7 @@
     enterSlot: enterSlot, toggleSong: toggleSong,
     savePreset: savePreset, loadPreset: loadPreset, deletePreset: deletePreset,
     exportFile: exportFile, importFile: importFile, exportMidi: exportMidi,
+    exportPattern: exportPattern, handleMidi: handleMidi, toggleMidi: toggleMidi,
     clearPattern: clearPattern,
     setBpm: setBpm, nudgeBpm: nudgeBpm, tapTempo: tapTempo,
     applyPreset: applyPreset, loadPattern: loadPattern, setVibe: setVibe,

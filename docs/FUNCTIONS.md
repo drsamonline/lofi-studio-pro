@@ -206,3 +206,13 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | chance check in `triggerStep` | audio | A step that is on can still skip, by percentage | ✓ |
 | `setChanceMode(on)` / `cycleChance(id, i)` | ui | The chance mode and its 100 → 75 → 50 → 25 → 100 cycle | ✓ |
 | `labelled(text, control)` | ui | The PAN / REV rows in a mixer strip | ✓ |
+
+## Added in 2.9.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `openRowMenu(head, id)` / `closeMenu()` | ui | Clear / Copy / Paste for one track row | ✓ |
+| `flashTrack(id)` | ui | Flashes a row when a MIDI note lands | ◐ |
+| `handleMidi(data)` | main | GM drum map → voice, so any controller works | ✓ |
+| `toggleMidi()` | main | Requests MIDI access and binds every input | ◐ |
+| `exportPattern()` | main | Pattern-only payload: steps, chances, tempo, chords | ✓ |

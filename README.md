@@ -7,10 +7,10 @@
 [**▶ Open the app**](https://drsamonline.github.io/lofi-studio-pro/) · [Landing page](https://drsamonline.github.io/lofi-studio-pro/landing.html) · [Report a bug](https://github.com/drsamonline/lofi-studio-pro/issues)
 
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c6ef5)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.8.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.9.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%C2%B7%20offline-5a0fc8)](manifest.webmanifest)
 [![Tests](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml/badge.svg)](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml)
-[![134 browser checks](https://img.shields.io/badge/browser%20checks-134%20passing-2ea44f)](docs/TEST-REPORT.md)
+[![139 browser checks](https://img.shields.io/badge/browser%20checks-139%20passing-2ea44f)](docs/TEST-REPORT.md)
 [![Build](https://img.shields.io/badge/build-none%20required-informational)](.)
 [![No trackers](https://img.shields.io/badge/trackers-zero-brightgreen)](.)
 
@@ -46,7 +46,7 @@ It was built for the ninety seconds between two tasks: no login, no library, no 
 
 **Presets and files** — name a beat and save it (up to 24), or export it as a `.json` and import it anywhere — by button, or by dropping the file on the window. A preset captures the beat and its sound, never your preferences.
 
-**MIDI export** — four bars as a Standard MIDI File: drums on channel 10, bass/keys/melody on 1–3, chords already voiced, accents as velocities. It opens in a DAW with the parts separated.
+**MIDI in and out** — play the voices from a keyboard or pad controller, or export four bars as a Standard MIDI File: drums on channel 10, bass/keys/melody on 1–3, chords already voiced, accents as velocities. It opens in a DAW with the parts separated.
 
 **Installable and offline** — a service worker precaches the shell, Tone.js included, so the app opens from the home screen with no connection at all.
 
@@ -77,7 +77,7 @@ Opening `index.html` straight from disk also works; only the service worker is s
 | Move around the sequencer | Arrow keys | Tap a pad |
 | Accent / ghost a step | — | Hold a pad |
 | Draw a run of steps | — | Drag across a row |
-| Empty a track | — | Hold the track name |
+| Track menu (clear / copy / paste) | — | Hold a track name |
 | Mute a track | — | Tap the track name (sequencer) or `M` (mixer) |
 | Solo a track | — | `S` in the mixer |
 | Tempo | — | `−` / `+`, or `TAP` four times |
@@ -163,7 +163,7 @@ Three decisions worth knowing:
 
 ## Testing
 
-134 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, presets, export and import, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
+139 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, presets, export and import, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
 
 ```bash
 pip install websocket-client && python3 tests/run_browser_tests.py
@@ -177,8 +177,8 @@ The web app is the source of truth; the wrappers are thin and live in CI, so not
 
 | Target | How | Built |
 | --- | --- | --- |
-| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.8.0.apk` (3.8 MB) — debug-signed, so sideload it |
-| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.8.0-x64-setup.exe` (2.1 MB) and `.msi` (2.9 MB) |
+| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.9.0.apk` (3.8 MB) — debug-signed, so sideload it |
+| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.9.0-x64-setup.exe` (2.1 MB) and `.msi` (2.9 MB) |
 | **PWA** | The live site installs to any home screen | tested — this is the build the 88 browser checks run against |
 
 All three are attached to the [latest release](https://github.com/drsamonline/lofi-studio-pro/releases/latest). Push a tag and CI rebuilds them from that exact commit.

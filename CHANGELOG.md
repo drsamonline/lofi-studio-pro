@@ -2,6 +2,24 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.9.0 — 11 November 2026
+
+The last of the small ones.
+
+### Added
+
+- **A track menu.** Holding a track name now opens Clear / Copy / Paste instead of wiping the row on the spot — a hold that silently emptied a row was too sharp an edge. Paste carries the row's chances with it.
+- **MIDI input.** Flip it on in Settings and a keyboard or pad controller plays the voices; note numbers follow the General MIDI drum map so nothing needs configuring. The matching row flashes as the note lands.
+- **Export the pattern only** — steps, chances, tempo and chords, without your mix or effects, so a beat can be handed over without handing over your sound. It imports through the same path as a full export.
+
+### Changed
+
+- The hold-to-clear gesture is now a menu, which also makes clearing *discoverable* rather than folklore.
+
+### Notes
+
+- 139 browser checks, up from 134.
+
 ## 2.8.0 — 11 November 2026
 
 Two things that make a loop breathe.

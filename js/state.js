@@ -53,6 +53,7 @@
       metro: false,
       countIn: false,
       view: 'studio',
+      midi: false,
       song: { on: false, slots: [null, null, null, null] }
     };
   }
@@ -78,6 +79,7 @@
     d.metro = bool(s.metro, false);
     d.countIn = bool(s.countIn, false);
     d.view = ['studio', 'mix', 'amb', 'themes', 'settings'].indexOf(s.view) > -1 ? s.view : 'studio';
+    d.midi = bool(s.midi, false);
 
     var song = obj(s.song);
     d.song.on = bool(song.on, false);

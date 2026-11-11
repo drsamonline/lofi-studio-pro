@@ -206,7 +206,7 @@
       head.innerHTML =
         '<span class="seq-dot" style="--c:' + meta.color + '"></span>' +
         '<span class="seq-name">' + meta.label + '</span>';
-      bindTrackClear(head, id);
+      bindTrackMenu(head, id);
       row.appendChild(head);
 
       for (var i = 0; i < LS.STEP_COUNT; i++) {
@@ -289,6 +289,142 @@
       if (justDragged) { justDragged = false; return; }
       toggleStep(p.dataset.track, parseInt(p.dataset.step, 10));
     });
+  }
+
+  /* Registered once, on the document: a drag that leaves its starting pad still
+     paints, and a pointer that ends anywhere still commits. */
+  function bindPaintGestures() {
+    document.addEventListener('pointermove', function (e) {
+      if (!paint) return;
+      if (!paint.moved && Math.abs(e.clientX - paint.x) + Math.abs(e.clientY - paint.y) < 8) return;
+      if (!paint.moved) {
+        clearTimeout(paint.timer);
+        paint.moved = true;
+        /* the pad the gesture started on belongs to the run as well */
+        if (writeStep(paint.origin.id, paint.origin.i, paint.value)) {
+          paint.changed = true;
+          paintSequencer();
+        }
+      }
+      var pad = padAt(e.clientX, e.clientY);
+      if (!pad) return;
+      if (writeStep(pad.dataset.track, parseInt(pad.dataset.step, 10), paint.value)) {
+        paint.changed = true;
+        paintSequencer();
+      }
+    });
+
+    document.addEventListener('pointerup', function () {
+      if (!paint) return;
+      clearTimeout(paint.timer);
+      if (paint.moved) {
+        justDragged = true;
+        if (paint.changed) {
+          paintPatterns();
+          paintNowPlaying();
+          LS.State.saveSoon();
+        }
+      }
+      paint = null;
+    });
+  }
+
+  /* Hold a track name to open its menu — clear the row, or copy it onto
+     another one. A hold that silently wiped a row was too sharp an edge. */
+  var rowClip = null;
+  var menuEl = null;
+
+  function closeMenu() {
+    if (menuEl && menuEl.parentNode) menuEl.parentNode.removeChild(menuEl);
+    menuEl = null;
+  }
+
+  function openRowMenu(head, id) {
+    closeMenu();
+    var r = head.getBoundingClientRect();
+    var m = document.createElement('div');
+    m.className = 'row-menu';
+    m.innerHTML =
+      '<button type="button" data-act="copy">Copy row</button>' +
+      '<button type="button" data-act="paste"' + (rowClip ? '' : ' disabled') + '>Paste row</button>' +
+      '<button type="button" data-act="clear">Clear row</button>';
+    m.style.left = Math.round(r.left) + 'px';
+    m.style.top = Math.round(r.bottom + 4) + 'px';
+    document.body.appendChild(m);
+    menuEl = m;
+
+    m.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-act]');
+      if (!b) return;
+      var act = b.dataset.act;
+      closeMenu();
+      if (act === 'copy') {
+        rowClip = {
+          steps: LS.State.data.steps[id].slice(),
+          probs: (LS.State.data.probs[id] || []).slice(),
+          from: id
+        };
+        toast('Copied ' + LS.TRACKS[id].label, 'success');
+      } else if (act === 'paste') {
+        if (!rowClip) return;
+        var before = { steps: LS.State.data.steps[id].slice(), probs: (LS.State.data.probs[id] || []).slice() };
+        LS.State.data.steps[id] = rowClip.steps.slice();
+        if (rowClip.probs.length) LS.State.data.probs[id] = rowClip.probs.slice();
+        LS.State.data.patternId = null;
+        paintSequencer();
+        paintPatterns();
+        paintNowPlaying();
+        LS.State.saveSoon();
+        toast('Pasted into ' + LS.TRACKS[id].label, 'info', {
+          label: 'Undo',
+          fn: function () {
+            LS.State.data.steps[id] = before.steps;
+            if (before.probs.length) LS.State.data.probs[id] = before.probs;
+            paintSequencer();
+            LS.State.saveSoon();
+          }
+        });
+      } else if (act === 'clear') {
+        var prev = { steps: LS.State.data.steps[id].slice(), probs: (LS.State.data.probs[id] || []).slice() };
+        if (!prev.steps.some(function (v) { return v; })) { toast('Already empty', 'info'); return; }
+        LS.State.data.steps[id] = new Array(LS.STEP_COUNT).fill(0);
+        LS.State.data.patternId = null;
+        if (LS.App && LS.App.haptic) LS.App.haptic(18);
+        paintSequencer();
+        paintPatterns();
+        paintNowPlaying();
+        LS.State.saveSoon();
+        toast(LS.TRACKS[id].label + ' cleared', 'info', {
+          label: 'Undo',
+          fn: function () {
+            LS.State.data.steps[id] = prev.steps;
+            if (prev.probs.length) LS.State.data.probs[id] = prev.probs;
+            paintSequencer();
+            LS.State.saveSoon();
+          }
+        });
+      }
+    });
+    setTimeout(function () {
+      document.addEventListener('pointerdown', closeMenu, { once: true });
+    }, 0);
+  }
+
+  function bindTrackMenu(head, id) {
+    var timer = null, held = false;
+    head.addEventListener('pointerdown', function () {
+      held = false;
+      timer = setTimeout(function () {
+        held = true;
+        if (LS.App && LS.App.haptic) LS.App.haptic(14);
+        openRowMenu(head, id);
+      }, 550);
+    });
+    head.addEventListener('pointerup', function () { clearTimeout(timer); });
+    head.addEventListener('pointerleave', function () { clearTimeout(timer); });
+    head.addEventListener('click', function (e) {
+      if (held) { held = false; e.stopPropagation(); e.preventDefault(); }
+    }, true);
   }
 
   /* Registered once, on the document: a drag that leaves its starting pad still
@@ -718,6 +854,17 @@
     }
   }
 
+  /* A brief flash on a track row, used when a MIDI note lands. */
+  function flashTrack(id) {
+    var idx = LS.TRACK_IDS.indexOf(id);
+    if (idx < 0) return;
+    var rows = document.querySelectorAll('#seq .seq-row');
+    var row = rows[idx];
+    if (!row) return;
+    row.classList.add('hit');
+    setTimeout(function () { row.classList.remove('hit'); }, 120);
+  }
+
   function paintHistory() {
     var b = document.getElementById('btn-undo');
     if (b) b.disabled = !LS.State.canUndo();
@@ -803,7 +950,7 @@
   function paintSettings() {
     var S = LS.State.data;
     [['setAutosave', 'autoSave'], ['setAutofill', 'autoFill'], ['setDebug', 'debug'],
-     ['setMetro', 'metro'], ['setCountIn', 'countIn']].forEach(function (pair) {
+     ['setMetro', 'metro'], ['setCountIn', 'countIn'], ['setMidi', 'midi']].forEach(function (pair) {
       var b = el[pair[0]];
       if (!b) return;
       b.setAttribute('aria-checked', S[pair[1]] ? 'true' : 'false');
@@ -946,6 +1093,7 @@
         setDebug: $('set-debug'),
         setMetro: $('set-metro'),
         setCountIn: $('set-countin'),
+        setMidi: $('set-midi'),
         vizMode: $('set-viz'),
         storage: $('storage-info')
       };
@@ -980,6 +1128,7 @@
     paintSettings: paintSettings,
     paintHistory: paintHistory,
     renderSong: renderSong,
+    flashTrack: flashTrack,
     setChanceMode: setChanceMode,
     isChanceMode: function () { return chanceMode; },
     showSheet: showSheet,
