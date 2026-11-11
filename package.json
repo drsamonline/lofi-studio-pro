@@ -30,7 +30,8 @@
     "android:debug": "cd android && ./gradlew assembleDebug",
     "tauri:init": "npx tauri init",
     "tauri:build": "npx tauri build",
-    "build:web": "sh scripts/build-web.sh"
+    "build:web": "node scripts/stage.js",
+    "build": "node scripts/stage.js"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.1.2",

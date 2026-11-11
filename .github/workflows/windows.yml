@@ -34,7 +34,7 @@ jobs:
           if (!(Test-Path src-tauri)) {
             npx tauri init --app-name "Lofi Studio Pro" `
               --window-title "Lofi Studio Pro" `
-              --frontend-dist "../" `
+              --frontend-dist "../dist" `
               --dev-url "http://localhost:8000" --ci
           }
 
@@ -44,6 +44,8 @@ jobs:
           $c = Get-Content $path -Raw | ConvertFrom-Json
           $c.identifier = "com.drsamonline.lofistudio"
           $c.productName = "Lofi Studio Pro"
+          $c.build.frontendDist = "../dist"
+          $c.build.beforeBuildCommand = "node scripts/stage.js"
           $c | ConvertTo-Json -Depth 20 | Set-Content $path -Encoding utf8
           Get-Content $path | Select-String -Pattern 'identifier|productName'
 

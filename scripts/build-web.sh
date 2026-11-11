@@ -1,9 +1,4 @@
 #!/bin/sh
-# Collects the static app into dist/ for the native wrappers.
-# The web app is served straight from the repository root; this folder only
-# exists so Capacitor and Tauri have something small to copy.
+# Kept for anyone who prefers a shell one-liner; it just calls the node script.
 set -e
-rm -rf dist
-mkdir -p dist
-cp -R index.html manifest.webmanifest sw.js css js vendor icons dist/
-echo "dist/ ready: $(du -sh dist | cut -f1)"
+exec node "$(dirname "$0")/stage.js"
