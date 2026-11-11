@@ -38,6 +38,15 @@ jobs:
               --dev-url "http://localhost:8000" --ci
           }
 
+      - name: Set the bundle identifier
+        run: |
+          $path = "src-tauri/tauri.conf.json"
+          $c = Get-Content $path -Raw | ConvertFrom-Json
+          $c.identifier = "com.drsamonline.lofistudio"
+          $c.productName = "Lofi Studio Pro"
+          $c | ConvertTo-Json -Depth 20 | Set-Content $path -Encoding utf8
+          Get-Content $path | Select-String -Pattern 'identifier|productName'
+
       - name: Build
         run: npx tauri build
 
