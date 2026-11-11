@@ -2,6 +2,22 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.3.0 — 11 November 2026
+
+The app now keeps what you make.
+
+### Added
+
+- **My presets.** Name the beat you are working on, save it, load it later, delete what you have outgrown. Up to 24, stored beside the live state. A preset captures the musical half only — tempo, swing, steps, chords, effects, mix, ambience and theme — so loading someone's beat never rewrites your auto-save setting or turns on debug logging.
+- **Export to a file.** Downloads a `.json` of the whole beat, so a pattern no longer lives and dies with one browser's local storage.
+- **Import a file**, by button or by **dropping it anywhere in the window**. Anything that is not a beat is refused with a message instead of quietly wiping the studio.
+- A settings screenshot in the README, because that is where the new stuff lives.
+
+### Notes
+
+- Imports go through the same validator as a saved state, so a hand-edited or ancient file can only ever produce valid values. The audio engine still never sees a bad number.
+- 100 browser checks, up from 91: saving, loading, deleting, the preference-isolation rule, export shape, and import both accepting a beat and rejecting everything else.
+
 ## 2.2.0 — 11 November 2026
 
 Gestures and robustness — the parts you only notice when they are missing.

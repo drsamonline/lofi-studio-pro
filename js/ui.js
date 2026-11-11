@@ -580,6 +580,38 @@
     });
   }
 
+  /* --------------------------------------------------------------- presets */
+  function renderPresets() {
+    var host = document.getElementById('preset-list');
+    if (!host) return;
+    var list = LS.State.presets();
+    host.innerHTML = '';
+    if (!list.length) {
+      host.innerHTML = '<p class="p-empty">Nothing saved yet. Build something, name it, save it.</p>';
+      return;
+    }
+    list.forEach(function (p) {
+      var row = document.createElement('div');
+      row.className = 'preset-row';
+      row.innerHTML =
+        '<span class="p-name"></span>' +
+        '<span class="p-meta"></span>' +
+        '<button class="btn btn-sm" type="button" data-load>Load</button>' +
+        '<button class="icon icon-sm" type="button" data-del aria-label="Delete preset">' +
+        '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+      row.querySelector('.p-name').textContent = p.name;
+      var d = new Date(p.at);
+      row.querySelector('.p-meta').textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      row.querySelector('[data-load]').addEventListener('click', function () {
+        LS.App.loadPreset(p.id);
+      });
+      row.querySelector('[data-del]').addEventListener('click', function () {
+        LS.App.deletePreset(p.id);
+      });
+      host.appendChild(row);
+    });
+  }
+
   /* ---------------------------------------------------------------- paints */
   function paintPatterns() {
     var S = LS.State.data;
@@ -794,6 +826,7 @@
       buildAmbience();
       buildThemes();
       paintAll();
+      renderPresets();
     },
     toast: toast,
     highlight: highlight,
@@ -809,6 +842,7 @@
     paintNowPlaying: paintNowPlaying,
     paintTransport: paintTransport,
     paintSettings: paintSettings,
+    renderPresets: renderPresets,
     paintAmbience: paintAmbience,
     makeKnob: knob,
     knob: function (id) { return knobs[id]; },

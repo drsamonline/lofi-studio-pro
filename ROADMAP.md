@@ -1,6 +1,6 @@
 # Roadmap
 
-**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
+**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
 
 What to add next, ordered by value per line of code. Each item carries an effort estimate and a bloat cost, because the constraint that matters for this app is not features — it is that it stays one screen that loads instantly.
 
@@ -20,7 +20,7 @@ What to add next, ordered by value per line of code. Each item carries an effort
 | 5 | ✅ 2.1.0 **Per-step velocity** (long-press a pad to cycle accent / normal / ghost) | The difference between a drum machine and a drum machine that grooves. Six tracks of on/off is why patterns sound stiff | M | 3 states per step, one gesture |
 | 6 | ✅ 2.1.0 **Fade in / out over 40 ms** on play and stop | Kills the click at the start of every take and in every recording | S | ~8 lines |
 | 7 | ✅ 2.1.0 **Update prompt** when the service worker finds a new version | Right now a new deploy only reaches people who navigate with a connection; an installed PWA can sit on an old shell for weeks | S | one toast |
-| 8 | **Named user presets** (save / load / delete) | Six built-in activities are not enough once someone finds their sound | M | one screen section, ~80 lines |
+| 8 | ✅ 2.3.0 **Named user presets** (save / load / delete) | Six built-in activities are not enough once someone finds their sound | M | one screen section, ~80 lines |
 
 ## Next — offline and robustness
 
@@ -31,7 +31,7 @@ The app already works fully offline, including its audio library. What is left i
 | 9 | ✅ 2.1.0 **iOS install instructions sheet** | `beforeinstallprompt` never fires on iOS, so the install button simply does not exist there. A one-time "Share → Add to Home Screen" hint recovers the whole iPhone audience | S | one dismissible sheet |
 | 10 | ✅ 2.2.0 **Cache budget and eviction** | The shell is ~600 KB and grows with screenshots; cap it and prune old entries so an installed app never eats a phone's quota | S | ~20 lines in `sw.js` |
 | 11 | **Save takes to a folder** (File System Access API, where available) | Turns "download" into "it appears in my Lofi folder" — the difference between a demo and a tool | M | ~50 lines, progressive |
-| 12 | **Export the pattern as a file** (`.lofi.json`) | Backup, share, and a migration path that does not depend on `localStorage` surviving a browser clean-up | S | ~30 lines |
+| 12 | ✅ 2.3.0 **Export the pattern as a file** (`.lofi.json`) | Backup, share, and a migration path that does not depend on `localStorage` surviving a browser clean-up | S | ~30 lines |
 | 13 | ✅ 2.2.0 **Recover gracefully from a lost AudioContext** | iOS suspends the context on a phone call or a long background; the app currently just goes quiet | M | ~30 lines |
 | 14 | **Offline-first README and in-app "works offline" hint** | People do not know it works on a plane until they try it and are surprised | S | copy |
 

@@ -148,6 +148,30 @@
       </div>
 
       <div class="block">
+        <div class="block-head"><span class="block-title">My presets</span></div>
+        <div class="preset-save">
+          <input id="preset-name" class="text-input" type="text" maxlength="28"
+                 placeholder="Name this beat" aria-label="Preset name">
+          <button id="btn-save-preset" class="btn btn-sm btn-primary" type="button">Save</button>
+        </div>
+        <div id="preset-list" class="preset-list"></div>
+      </div>
+
+      <div class="block">
+        <div class="rows">
+          <div class="row">
+            <div class="row-text"><strong>Export to a file</strong><span>Keep this beat outside the browser</span></div>
+            <button id="btn-export" class="btn btn-sm" type="button">Download</button>
+          </div>
+          <div class="row">
+            <div class="row-text"><strong>Import a file</strong><span>Load a beat someone sent you</span></div>
+            <button id="btn-import" class="btn btn-sm" type="button">Choose</button>
+          </div>
+          <input id="import-file" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+
+      <div class="block">
         <div class="rows">
           <div class="row">
             <div class="row-text"><strong>Surprise me</strong><span>New pattern, chords, tempo and theme</span></div>
@@ -178,7 +202,7 @@
           Shortcuts: <b>Space</b> play · <b>S</b> surprise · <b>B</b> theme · <b>R</b> record · <b>X</b> stop all.
           Arrow keys move around the sequencer. <b>Hold a pad</b> to cycle normal → accent → ghost.
         </p>
-        <p class="about" style="margin-top:8px">Build 2.2.0</p>
+        <p class="about" style="margin-top:8px">Build 2.3.0</p>
       </div>
     </section>
   </main>

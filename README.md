@@ -7,10 +7,10 @@
 [**▶ Open the app**](https://drsamonline.github.io/lofi-studio-pro/) · [Landing page](https://drsamonline.github.io/lofi-studio-pro/landing.html) · [Report a bug](https://github.com/drsamonline/lofi-studio-pro/issues)
 
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c6ef5)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.2.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.3.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%C2%B7%20offline-5a0fc8)](manifest.webmanifest)
 [![Tests](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml/badge.svg)](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml)
-[![91 browser checks](https://img.shields.io/badge/browser%20checks-91%20passing-2ea44f)](docs/TEST-REPORT.md)
+[![100 browser checks](https://img.shields.io/badge/browser%20checks-100%20passing-2ea44f)](docs/TEST-REPORT.md)
 [![Build](https://img.shields.io/badge/build-none%20required-informational)](.)
 [![No trackers](https://img.shields.io/badge/trackers-zero-brightgreen)](.)
 
@@ -37,6 +37,8 @@ It was built for the ninety seconds between two tasks: no login, no library, no 
 **Ten themes** — from a near-black studio to a paper-white daytime mode, all driven by CSS custom properties so the swap is instant.
 
 **Recording** — hit the record button to capture a take as a downloadable audio file.
+
+**Presets and files** — name a beat and save it (up to 24), or export it as a `.json` and import it anywhere — by button, or by dropping the file on the window. A preset captures the beat and its sound, never your preferences.
 
 **Installable and offline** — a service worker precaches the shell, Tone.js included, so the app opens from the home screen with no connection at all.
 
@@ -76,6 +78,8 @@ Opening `index.html` straight from disk also works; only the service worker is s
 | Record a take | `R` | Record button in the top bar |
 | Stop everything | `X` | Panic button |
 | Share the beat | — | Settings → Copy link |
+| Save / load a preset | — | Settings → My presets |
+| Export / import a file | — | Settings, or drop a `.json` on the window |
 
 Knobs and faders accept a drag, a scroll wheel, and arrow keys. Double-click a knob to reset it. Hold `Shift` while dragging for fine adjustment.
 
@@ -106,6 +110,8 @@ The figure is generated from real captures of the running app, not from a mock: 
 | <img src="screenshots/desktop.png" alt="Studio view"> | <img src="screenshots/mix.png" alt="Mixer and effects"> |
 | **Ambience** | **Light theme** |
 | <img src="screenshots/ambience.png" alt="Ambience layers"> | <img src="screenshots/light.png" alt="Light theme"> |
+| **Settings, presets and files** | **Mixer** |
+| <img src="screenshots/settings.png" alt="Settings with saved presets"> | <img src="screenshots/mix.png" alt="Mixer and effects"> |
 
 <div align="center">
 <img src="screenshots/mobile.png" alt="Lofi Studio Pro on a phone" width="300">
@@ -138,7 +144,7 @@ Three decisions worth knowing:
 
 ## Testing
 
-91 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
+100 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, presets, export and import, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
 
 ```bash
 pip install websocket-client && python3 tests/run_browser_tests.py

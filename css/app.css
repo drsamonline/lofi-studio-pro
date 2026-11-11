@@ -670,6 +670,35 @@ input[type="range"]::-moz-range-thumb {
 .toast.out { opacity: 0; transform: translateY(4px); transition: all .2s; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
 
+/* ----------------------------------------------------------------- presets */
+.preset-save { display: flex; gap: 8px; margin-bottom: 10px; }
+.text-input {
+  flex: 1; min-width: 0; min-height: 38px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--pad-off);
+  color: var(--text);
+  font-size: 13px;
+}
+.text-input::placeholder { color: var(--dim); }
+.text-input:focus { outline: 2px solid var(--acc); outline-offset: 1px; border-color: transparent; }
+
+.preset-list { display: flex; flex-direction: column; }
+.preset-row {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 46px; padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.preset-row:last-child { border-bottom: 0; }
+.preset-row .p-name {
+  flex: 1; min-width: 0; font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preset-row .p-meta { font-size: 10.5px; color: var(--dim); font-weight: 500; }
+.preset-row button { flex: none; }
+.p-empty { font-size: 12px; color: var(--dim); padding: 6px 0; }
+
 /* ------------------------------------------------------------------ sheet */
 .sheet {
   position: fixed; inset: 0; z-index: 80;

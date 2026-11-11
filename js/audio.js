@@ -535,6 +535,7 @@
   }
   function ambienceVol(id, v) { if (A.amb[id]) A.amb[id].gain.gain.value = (v / 100) * 0.75; }
   function ambienceCount() { return Object.keys(A.amb).length; }
+  function isAmbienceOn(id) { return !!A.amb[id]; }
 
   /* ------------------------------------------------------------- recorder */
   function canRecord() {
@@ -632,6 +633,7 @@
     ambienceOff: ambienceOff,
     ambienceVol: ambienceVol,
     ambienceCount: ambienceCount,
+    isAmbienceOn: isAmbienceOn,
     canRecord: canRecord,
     recordStart: recordStart,
     recordStop: recordStop,

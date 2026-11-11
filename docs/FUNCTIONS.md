@@ -141,3 +141,18 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | `mediaSession(state)` | main | Lock-screen title, artwork and play/pause state | ✓ |
 | `cycleSleepTimer()` | main | 0 → 15 → 30 → 60 → 90 minutes, then stops the transport | ✓ |
 | `shareLink()` / `copy()` / `fallbackCopy()` | main | Share sheet where available, clipboard otherwise | ◐ |
+
+## Added in 2.3.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `State.snapshot()` | state | The musical half of the state — beat, sound, mix, theme — deep-copied | ✓ |
+| `State.restore(snap)` | state | Applies a snapshot through the validator, preferences untouched | ✓ |
+| `State.presets()` / `writePresets(list)` | state | Reads and writes the preset store, capped at 24 | ✓ |
+| `State.savePreset(name)` / `deletePreset(id)` / `loadPreset(id)` | state | Create, remove, recall | ✓ |
+| `State.exportState()` | state | Tagged JSON payload of the whole beat | ✓ |
+| `State.importState(obj)` | state | Accepts a payload or a bare state, refuses anything that is not a beat | ✓ |
+| `renderPresets()` | ui | Draws the preset rows with load and delete | ✓ |
+| `savePreset()` / `loadPreset()` / `deletePreset()` | main | UI side, with toasts | ✓ |
+| `exportFile()` / `importFile(file)` | main | Blob download and FileReader import | ◐ |
+| `applySnapshot()` / `syncAmbience()` | main | Pushes a loaded beat into the audio engine and the UI, including which ambience layers should be running | ✓ |

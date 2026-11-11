@@ -237,6 +237,88 @@
     if (!playing) play();
   }
 
+  /* --------------------------------------------------------- my presets
+     A snapshot of the beat and its sound, stored beside the live state.
+     Loading one never touches preferences — only the musical half. */
+  function savePreset() {
+    var input = $('preset-name');
+    var entry = S.savePreset(input ? input.value : '');
+    if (input) input.value = '';
+    UI.renderPresets();
+    UI.toast('Saved "' + entry.name + '"', 'success');
+  }
+
+  /* Bring the running layers in line with the state, in both directions —
+     a loaded preset may want rain on and fire off. */
+  function syncAmbience() {
+    LS.AMBIENCE_IDS.forEach(function (id) {
+      var want = S.data.amb[id].on;
+      var running = A.isAmbienceOn(id);
+      if (want && !running) A.ambienceOn(id);
+      else if (!want && running) A.ambienceOff(id);
+      else if (want && running) A.ambienceVol(id, S.data.amb[id].vol);
+    });
+  }
+
+  function applySnapshot() {
+    A.applyAll();
+    A.setBpm(S.data.bpm);
+    applyTheme(S.data.theme);
+    UI.paintAll();
+    UI.paintTransport(playing);
+    if (UI.knob('filter')) UI.knob('filter').set(S.data.fx.filter);
+    if (swingCtl) swingCtl.set(S.data.swing);
+    syncAmbience();
+  }
+
+  function loadPreset(id) {
+    var hit = S.loadPreset(id);
+    if (!hit) return;
+    applySnapshot();
+    UI.toast('Loaded "' + hit.name + '"', 'success');
+  }
+
+  function deletePreset(id) {
+    S.deletePreset(id);
+    UI.renderPresets();
+    UI.toast('Preset deleted', 'info');
+  }
+
+  /* --------------------------------------------------------- export / import */
+  function exportFile() {
+    var payload = S.exportState();
+    var name = (S.data.patternId ? LS.PATTERNS[S.data.patternId].name : 'custom')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    var stamp = new Date().toISOString().slice(0, 10);
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'lofi-' + name + '-' + stamp + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    UI.toast('Beat downloaded', 'success');
+  }
+
+  function importFile(file) {
+    if (!file) return;
+    if (file.size > 512 * 1024) { UI.toast('That file is too large to be a beat', 'error'); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var obj;
+      try { obj = JSON.parse(reader.result); }
+      catch (e) { UI.toast('That file is not valid JSON', 'error'); return; }
+      var ok = S.importState(obj);
+      if (!ok) { UI.toast('That file does not look like a beat', 'error'); return; }
+      applySnapshot();
+      UI.toast('Beat imported', 'success');
+    };
+    reader.onerror = function () { UI.toast('Could not read that file', 'error'); };
+    reader.readAsText(file);
+  }
+
   /* ------------------------------------------------------------ sleep timer
      The Sleep preset exists but nothing stopped it; this is the other half. */
   var sleepTimer = null;
@@ -371,6 +453,33 @@
     $('btn-tap').addEventListener('click', tapTempo);
     $('btn-surprise').addEventListener('click', surprise);
     $('btn-share').addEventListener('click', shareLink);
+    $('btn-save-preset').addEventListener('click', savePreset);
+    $('preset-name').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); savePreset(); }
+    });
+    $('btn-export').addEventListener('click', exportFile);
+    $('btn-import').addEventListener('click', function () { $('import-file').click(); });
+    $('import-file').addEventListener('change', function () {
+      importFile(this.files && this.files[0]);
+      this.value = '';
+    });
+
+    /* dropping a beat file anywhere in the window imports it */
+    document.addEventListener('dragover', function (e) {
+      if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') > -1) {
+        e.preventDefault();
+        document.body.classList.add('is-dropping');
+      }
+    });
+    document.addEventListener('dragleave', function (e) {
+      if (e.target === document.documentElement) document.body.classList.remove('is-dropping');
+    });
+    document.addEventListener('drop', function (e) {
+      document.body.classList.remove('is-dropping');
+      if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+      e.preventDefault();
+      importFile(e.dataTransfer.files[0]);
+    });
     $('set-sleep').addEventListener('click', cycleSleepTimer);
     $('set-sleep').textContent = (S.data.sleep ? S.data.sleep + ' min' : 'Off');
     $('btn-reset').addEventListener('click', function () {
@@ -620,6 +729,8 @@
   /* Public surface used by ui.js and by the test harness. */
   LS.App = {
     play: play, stop: stop, toggle: toggle, panic: panic,
+    savePreset: savePreset, loadPreset: loadPreset, deletePreset: deletePreset,
+    exportFile: exportFile, importFile: importFile,
     setBpm: setBpm, nudgeBpm: nudgeBpm, tapTempo: tapTempo,
     applyPreset: applyPreset, loadPattern: loadPattern, setVibe: setVibe,
     applyTheme: applyTheme, toggleAmbience: toggleAmbience,

@@ -8,6 +8,10 @@
   'use strict';
 
   var KEY = 'lofi-studio-v2';
+  var PRESET_KEY = 'lofi-presets-v1';
+  var MAX_PRESETS = 24;
+  var SNAP_KEYS = ['bpm', 'swing', 'master', 'patternId', 'steps', 'tracks',
+                   'vibe', 'fx', 'amb', 'theme'];
   var LEGACY_KEY = 'lofi-studio-v7';
   var SAVE_MS = 400;
 
@@ -211,6 +215,93 @@
     onChange: function (fn) { State.listeners.push(fn); },
     emit: function (what) {
       State.listeners.forEach(function (fn) { try { fn(what); } catch (e) { console.warn(e); } });
+    },
+
+    /* ----------------------------------------------------------- snapshots
+       A snapshot is the musical half of the state: the beat, the sound and the
+       mix. Preferences (auto-save, debug, sleep timer) deliberately stay out,
+       so loading someone else's beat never rewrites how your app behaves. */
+    snapshot: function () {
+      var d = State.data, out = {};
+      SNAP_KEYS.forEach(function (k) { out[k] = JSON.parse(JSON.stringify(d[k])); });
+      return out;
+    },
+
+    /* Restores through merge(), so a hand-edited or ancient file can only
+       produce valid values — the audio engine never sees a bad number. */
+    restore: function (snap) {
+      if (!snap || typeof snap !== 'object') return null;
+      var clean = merge(snap), d = State.data;
+      SNAP_KEYS.forEach(function (k) { d[k] = clean[k]; });
+      return d;
+    },
+
+    /* ------------------------------------------------------------- presets */
+    presets: function () {
+      try {
+        var raw = JSON.parse(localStorage.getItem(PRESET_KEY));
+        return Array.isArray(raw) ? raw : [];
+      } catch (e) { return []; }
+    },
+
+    writePresets: function (list) {
+      try {
+        localStorage.setItem(PRESET_KEY, JSON.stringify(list.slice(0, MAX_PRESETS)));
+        return true;
+      } catch (e) {
+        console.warn('[Lofi] Could not write presets', e);
+        return false;
+      }
+    },
+
+    savePreset: function (name) {
+      var list = State.presets();
+      var label = (name || '').trim().slice(0, 28) ||
+        ('Beat ' + (list.length + 1));
+      var entry = {
+        id: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
+        name: label,
+        at: Date.now(),
+        data: State.snapshot()
+      };
+      list.unshift(entry);
+      State.writePresets(list);
+      return entry;
+    },
+
+    deletePreset: function (id) {
+      var list = State.presets().filter(function (p) { return p.id !== id; });
+      State.writePresets(list);
+      return list;
+    },
+
+    loadPreset: function (id) {
+      var hit = State.presets().filter(function (p) { return p.id === id; })[0];
+      if (!hit) return null;
+      State.restore(hit.data);
+      State.save();
+      return hit;
+    },
+
+    /* ------------------------------------------------------- export / import */
+    exportState: function () {
+      return {
+        app: 'lofi-studio-pro',
+        version: 2,
+        exported: new Date().toISOString(),
+        state: State.snapshot()
+      };
+    },
+
+    importState: function (obj) {
+      if (!obj || typeof obj !== 'object') return null;
+      var snap = obj.state && typeof obj.state === 'object' ? obj.state : obj;
+      /* Require something that looks like a beat, so dropping a random JSON
+         file on the window does not wipe the studio. */
+      if (!snap.steps && !snap.bpm && !snap.fx) return null;
+      var restored = State.restore(snap);
+      if (restored) State.save();
+      return restored;
     },
 
     /* ---------------------------------------------------------- sharing
