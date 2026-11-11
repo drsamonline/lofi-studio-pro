@@ -2,6 +2,25 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.5.0 — 11 November 2026
+
+Nothing here adds a sound. All of it makes the app safer and easier to learn.
+
+### Added
+
+- **Undo and redo.** Every edit is undoable — a pad tap, a painted run, a velocity change, a cleared row, a loaded pattern, a preset, an import. History listens where every mutation already passes (the debounced save), so a drag across twelve pads is **one** undo rather than twelve, and nothing had to be wired at thirty call sites.
+- **A shortcut sheet** — press `?` or use Settings → Keyboard shortcuts. Lists the keys and the pad gestures, because the gestures are the part nobody discovers on their own.
+- **Haptics** — a short tick when a pad changes, a firmer one for an accent, a longer one when a row is cleared. Silent on iOS, which has no vibration API.
+
+### Changed
+
+- The sequencer header carries an **undo button** that disables itself when there is nothing to undo, so the safety net is visible rather than folklore.
+- `Ctrl / ⌘ + Z` and `Shift + Ctrl / ⌘ + Z` work anywhere except inside a text field.
+
+### Notes
+
+- 115 browser checks, up from 107: undo of a step, redo, undo of a cleared row, the button's disabled state, and the shortcut sheet opening and closing.
+
 ## 2.4.1 — 11 November 2026
 
 ### Fixed

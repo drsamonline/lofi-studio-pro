@@ -183,6 +183,7 @@
     },
 
     save: function () {
+      if (State.touch) State.touch();
       if (!State.data.autoSave) return false;
       try {
         localStorage.setItem(KEY, JSON.stringify(State.data));
@@ -214,12 +215,69 @@
       return function () {
         clearTimeout(t);
         t = setTimeout(State.save, SAVE_MS);
+        State.touch();
       };
     })(),
 
     onChange: function (fn) { State.listeners.push(fn); },
     emit: function (what) {
       State.listeners.forEach(function (fn) { try { fn(what); } catch (e) { console.warn(e); } });
+    },
+
+    /* ------------------------------------------------------------- history
+       Every mutation already funnels through saveSoon(), so history listens
+       there instead of at thirty call sites. Bursts coalesce into one entry
+       (a drag is one undo, not sixteen), and the comparison is a stringify of
+       a few kilobytes on a 450 ms debounce. */
+    history: { past: [], future: [], current: null, timer: null, MAX: 40 },
+
+    initHistory: function () {
+      State.history = { past: [], future: [], current: State.snapshot(), timer: null, MAX: 40 };
+    },
+
+    touch: function () {
+      var h = State.history;
+      if (!h.current) { h.current = State.snapshot(); return; }
+      clearTimeout(h.timer);
+      h.timer = setTimeout(function () { State.commit(); }, 450);
+    },
+
+    commit: function () {
+      var h = State.history;
+      var next = State.snapshot();
+      if (JSON.stringify(next) === JSON.stringify(h.current)) return;
+      h.past.push(h.current);
+      if (h.past.length > h.MAX) h.past.shift();
+      h.current = next;
+      h.future.length = 0;
+      if (LS.UI && LS.UI.paintHistory) LS.UI.paintHistory();
+    },
+
+    canUndo: function () { return State.history.past.length > 0; },
+    canRedo: function () { return State.history.future.length > 0; },
+
+    undo: function () {
+      var h = State.history;
+      if (!h.past.length) return false;
+      clearTimeout(h.timer);
+      h.future.push(h.current);
+      h.current = h.past.pop();
+      State.restore(h.current);
+      State.save();
+      if (LS.UI && LS.UI.paintHistory) LS.UI.paintHistory();
+      return true;
+    },
+
+    redo: function () {
+      var h = State.history;
+      if (!h.future.length) return false;
+      clearTimeout(h.timer);
+      h.past.push(h.current);
+      h.current = h.future.pop();
+      State.restore(h.current);
+      State.save();
+      if (LS.UI && LS.UI.paintHistory) LS.UI.paintHistory();
+      return true;
     },
 
     /* ----------------------------------------------------------- snapshots

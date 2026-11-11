@@ -298,6 +298,43 @@ check("sleep timer: cycles off to 15 minutes",
 js("document.getElementById('set-sleep').click()"); drain(0.2)
 check("sleep timer: cycles on to 30", js("LS.State.data.sleep") == 30)
 
+# ------------------------------------------------------------ undo / redo
+js("LS.App.loadPattern('chillhop'); LS.State.save()"); drain(0.8)
+js("document.querySelectorAll('.pad')[2].click()"); drain(0.9)
+check("undo: a step change becomes an undoable entry",
+      js("LS.State.canUndo()") is True and
+      js("document.getElementById('btn-undo').disabled") is False,
+      js("document.getElementById('btn-undo').disabled"))
+before_undo = js("LS.State.data.steps.kick[2]")
+js("document.getElementById('btn-undo').click()"); drain(0.5)
+check("undo: the step is put back", js("LS.State.data.steps.kick[2]") == (0 if before_undo else 1),
+      "%s -> %s" % (before_undo, js("LS.State.data.steps.kick[2]")))
+js("""(function(){document.dispatchEvent(new KeyboardEvent('keydown',{key:'z',ctrlKey:true,shiftKey:true,bubbles:true}));return true;})()""")
+drain(0.5)
+check("undo: redo puts the change back", js("LS.State.data.steps.kick[2]") == before_undo,
+      js("LS.State.data.steps.kick[2]"))
+
+js("""(function(){var head=document.querySelector('.seq-head');
+  head.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+  setTimeout(function(){head.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));}, 700);
+  return true;})()""")
+drain(1.3)
+check("undo: a cleared row can be undone",
+      js("LS.State.data.steps.kick.every(function(v){return !v})") is True)
+js("document.getElementById('btn-undo').click()"); drain(0.6)
+check("undo: the cleared row comes back",
+      js("LS.State.data.steps.kick.filter(Boolean).length") > 0,
+      js("LS.State.data.steps.kick.filter(Boolean).length"))
+
+# ------------------------------------------------------------ shortcuts sheet
+js("""(function(){document.dispatchEvent(new KeyboardEvent('keydown',{key:'?',bubbles:true}));return true;})()""")
+drain(0.3)
+check("help: ? opens the shortcut sheet", js("document.getElementById('shortcuts').hidden") is False)
+check("help: the sheet lists the gestures", js("document.querySelectorAll('#shortcuts kbd').length") >= 8,
+      js("document.querySelectorAll('#shortcuts kbd').length"))
+js("document.querySelector('#shortcuts [data-close]').click()"); drain(0.2)
+check("help: it closes again", js("document.getElementById('shortcuts').hidden") is True)
+
 # ---------------------------------------------------------- presets & files
 js("localStorage.removeItem('lofi-presets-v1')")
 js("LS.App.setBpm(72); LS.App.loadPattern('dub'); LS.App.applyTheme('forest')"); drain(0.4)

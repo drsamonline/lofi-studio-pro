@@ -217,6 +217,23 @@
     return true;
   }
 
+  /* ------------------------------------------------------------- undo / redo */
+  function undo() {
+    if (!S.undo()) { UI.toast('Nothing to undo', 'info'); return; }
+    applySnapshot();
+    UI.toast('Undone', 'info');
+  }
+  function redo() {
+    if (!S.redo()) return;
+    applySnapshot();
+    UI.toast('Redone', 'info');
+  }
+
+  /* A 8 ms tick on a pad press. iOS has no vibration API; everything else does. */
+  function haptic(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms || 8); } catch (e) {}
+  }
+
   /* --------------------------------------------------------------- surprise */
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -454,6 +471,14 @@
     $('btn-surprise').addEventListener('click', surprise);
     $('btn-share').addEventListener('click', shareLink);
     $('btn-save-preset').addEventListener('click', savePreset);
+    $('btn-undo').addEventListener('click', undo);
+    $('btn-shortcuts').addEventListener('click', function () { UI.showSheet('shortcuts'); });
+    document.querySelectorAll('[data-close]').forEach(function (b) {
+      b.addEventListener('click', function () { UI.hideSheet(b.closest('.sheet')); });
+    });
+    document.querySelectorAll('.sheet').forEach(function (sh) {
+      sh.addEventListener('click', function (e) { if (e.target === sh) UI.hideSheet(sh); });
+    });
     $('preset-name').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); savePreset(); }
     });
@@ -571,9 +596,17 @@
 
     document.addEventListener('keydown', function (e) {
       var tag = (e.target.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || e.metaKey || e.ctrlKey) return;
+      if (tag === 'input' || tag === 'textarea') return;
+      var cmd = e.metaKey || e.ctrlKey;
       if (e.target.getAttribute && e.target.getAttribute('role') === 'slider') return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+        return;
+      }
       var k = e.key.toLowerCase();
+      if (k === '?') { UI.showSheet('shortcuts'); return; }
+      if (k === 'escape') { document.querySelectorAll('.sheet').forEach(function (sh) { UI.hideSheet(sh); }); return; }
       if (k === ' ') { e.preventDefault(); toggle(); }
       else if (k === 's') { surprise(); }
       else if (k === 'x') { panic(); }
@@ -678,6 +711,7 @@
   function boot() {
     var loaded = S.load();
     document.body.dataset.theme = S.data.theme;
+    S.initHistory();
 
     UI.init();
     wire();
@@ -737,6 +771,7 @@
   /* Public surface used by ui.js and by the test harness. */
   LS.App = {
     play: play, stop: stop, toggle: toggle, panic: panic,
+    undo: undo, redo: redo, haptic: haptic,
     savePreset: savePreset, loadPreset: loadPreset, deletePreset: deletePreset,
     exportFile: exportFile, importFile: importFile,
     setBpm: setBpm, nudgeBpm: nudgeBpm, tapTempo: tapTempo,

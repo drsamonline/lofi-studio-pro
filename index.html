@@ -85,6 +85,9 @@
           <span class="block-title">Sequencer</span>
           <span class="head-right">
             <span class="readout" id="readout" aria-hidden="true">1·1</span>
+            <button id="btn-undo" class="icon icon-sm" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled>
+              <svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h9a5 5 0 0 1 0 10h-2"/></svg>
+            </button>
             <button id="btn-fill" class="toggle-chip" type="button" aria-pressed="false">Auto fill</button>
           </span>
         </div>
@@ -168,6 +171,10 @@
       <div class="block">
         <div class="rows">
           <div class="row">
+            <div class="row-text"><strong>Keyboard shortcuts</strong><span>Everything the keyboard can do</span></div>
+            <button id="btn-shortcuts" class="btn btn-sm" type="button">Show</button>
+          </div>
+          <div class="row">
             <div class="row-text"><strong>Export to a file</strong><span>Keep this beat outside the browser</span></div>
             <button id="btn-export" class="btn btn-sm" type="button">Download</button>
           </div>
@@ -210,7 +217,7 @@
           Shortcuts: <b>Space</b> play · <b>S</b> surprise · <b>B</b> theme · <b>R</b> record · <b>X</b> stop all.
           Arrow keys move around the sequencer. <b>Hold a pad</b> to cycle normal → accent → ghost.
         </p>
-        <p class="about" style="margin-top:8px">Build 2.4.1</p>
+        <p class="about" style="margin-top:8px">Build 2.5.0</p>
       </div>
     </section>
   </main>
@@ -269,6 +276,25 @@
     </button>
   </nav>
 
+</div>
+
+<div id="shortcuts" class="sheet" hidden>
+  <div class="sheet-card">
+    <h3>Keyboard</h3>
+    <div class="keys">
+      <span>Play / stop</span><kbd>Space</kbd>
+      <span>Move around the sequencer</span><kbd>Arrows</kbd>
+      <span>Undo</span><kbd>Ctrl / ⌘ Z</kbd>
+      <span>Redo</span><kbd>Shift Ctrl Z</kbd>
+      <span>Surprise me</span><kbd>S</kbd>
+      <span>Next theme</span><kbd>B</kbd>
+      <span>Record</span><kbd>R</kbd>
+      <span>Stop everything</span><kbd>X</kbd>
+      <span>This list</span><kbd>?</kbd>
+    </div>
+    <p style="margin-top:16px">On a pad: tap to toggle, hold for accent and ghost, drag to paint a run. Hold a track name to empty that row.</p>
+    <button class="btn btn-primary btn-block" type="button" data-close>Close</button>
+  </div>
 </div>
 
 <div id="ios-tip" class="sheet" hidden>

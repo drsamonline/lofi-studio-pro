@@ -330,6 +330,7 @@
         if (before.every(function (v) { return !v; })) return;
         LS.State.data.steps[id] = new Array(LS.STEP_COUNT).fill(0);
         LS.State.data.patternId = null;
+        if (LS.App && LS.App.haptic) LS.App.haptic(18);
         paintSequencer(); paintPatterns(); paintNowPlaying();
         LS.State.saveSoon();
         toast(LS.TRACKS[id].label + ' cleared', 'info', {
@@ -355,6 +356,7 @@
     var next = cur === 0 ? 1 : cur === 1 ? 2 : cur === 2 ? 3 : 1;
     S.steps[id][i] = next;
     S.patternId = null;
+    if (LS.App && LS.App.haptic) LS.App.haptic(12);
     paintSequencer();
     paintPatterns();
     paintNowPlaying();
@@ -388,6 +390,7 @@
     var on = S.steps[id][i] ? 0 : 1;
     S.steps[id][i] = on;
     S.patternId = null;
+    if (LS.App && LS.App.haptic) LS.App.haptic(8);
     paintSequencer();
     paintPatterns();
     paintNowPlaying();
@@ -628,6 +631,19 @@
     });
   }
 
+  function paintHistory() {
+    var b = document.getElementById('btn-undo');
+    if (b) b.disabled = !LS.State.canUndo();
+  }
+
+  function showSheet(id) {
+    var sheet = document.getElementById(id);
+    if (sheet) sheet.hidden = false;
+  }
+  function hideSheet(sheet) {
+    if (sheet) sheet.hidden = true;
+  }
+
   /* ---------------------------------------------------------------- paints */
   function paintPatterns() {
     var S = LS.State.data;
@@ -853,6 +869,7 @@
       buildThemes();
       paintAll();
       renderPresets();
+      paintHistory();
     },
     toast: toast,
     highlight: highlight,
@@ -868,6 +885,9 @@
     paintNowPlaying: paintNowPlaying,
     paintTransport: paintTransport,
     paintSettings: paintSettings,
+    paintHistory: paintHistory,
+    showSheet: showSheet,
+    hideSheet: hideSheet,
     renderPresets: renderPresets,
     paintAmbience: paintAmbience,
     makeKnob: knob,

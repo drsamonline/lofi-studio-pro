@@ -165,3 +165,14 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | `buildMetronome()` | audio | The click, scheduled on the transport at quarter notes | ✓ |
 | `setTrackPan(id, v)` | audio | −100…100 into the channel panner | ✓ |
 | `scheduleSequence(countIn)` | audio | Starts the beat a bar late when a count-in is armed | ✓ |
+
+## Added in 2.5.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `State.initHistory()` / `touch()` / `commit()` | state | Snapshot history driven by the debounced save, so bursts coalesce | ✓ |
+| `State.undo()` / `redo()` / `canUndo()` / `canRedo()` | state | Restore the previous or next snapshot through the validator | ✓ |
+| `paintHistory()` | ui | Enables or disables the undo button | ✓ |
+| `showSheet(id)` / `hideSheet(sheet)` | ui | The shortcut and iOS-install sheets | ✓ |
+| `undo()` / `redo()` | main | Restores a snapshot and repaints the whole UI and engine | ✓ |
+| `haptic(ms)` | main | A short vibration where the platform supports it | ◐ |

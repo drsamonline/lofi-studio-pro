@@ -1,6 +1,6 @@
 # Roadmap
 
-**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. **Shipped in 2.4.0:** deferred audio library, metronome, count-in, per-track pan. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
+**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. **Shipped in 2.4.0:** deferred audio library, metronome, count-in, per-track pan. **Shipped in 2.5.0:** undo/redo, shortcut sheet, haptics. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
 
 What to add next, ordered by value per line of code. Each item carries an effort estimate and a bloat cost, because the constraint that matters for this app is not features — it is that it stays one screen that loads instantly.
 
@@ -10,6 +10,8 @@ What to add next, ordered by value per line of code. Each item carries an effort
 ---
 
 ## Now — highest value for the least code
+
+**Undo/redo and the shortcut sheet were not on this list and shipped in 2.5.0 anyway** — one-way destructive gestures were the biggest gap left in the app.
 
 | # | Idea | Why it matters | Effort | Bloat |
 | --- | --- | --- | --- | --- |
