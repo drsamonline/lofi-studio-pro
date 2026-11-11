@@ -767,6 +767,10 @@
       v.hidden = v.id !== 'view-' + name;
     });
     document.body.dataset.section = name;
+    if (LS.State && LS.State.data) {
+      LS.State.data.view = name;
+      LS.State.saveSoon();
+    }
     if (name !== 'studio') LS.Viz.stop(); else LS.Viz.start();
   }
 

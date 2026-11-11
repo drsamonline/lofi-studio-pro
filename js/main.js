@@ -319,6 +319,42 @@
     UI.toast('Beat downloaded', 'success');
   }
 
+  function exportMidi() {
+    try {
+      var bytes = LS.MIDI.build(S.data);
+      var name = (S.data.patternId ? LS.PATTERNS[S.data.patternId].name : 'custom')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      var blob = new Blob([bytes], { type: 'audio/midi' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'lofi-' + name + '-' + S.data.bpm + 'bpm.mid';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      UI.toast('Four bars exported as MIDI', 'success');
+    } catch (e) {
+      UI.toast('Could not build the MIDI file', 'error');
+      console.error(e);
+    }
+  }
+
+  function clearPattern() {
+    var empty = new Array(LS.STEP_COUNT).fill(0);
+    var any = LS.TRACK_IDS.some(function (t) {
+      return S.data.steps[t].some(function (v) { return v; });
+    });
+    if (!any) { UI.toast('Already empty', 'info'); return; }
+    LS.TRACK_IDS.forEach(function (t) { S.data.steps[t] = empty.slice(); });
+    S.data.patternId = null;
+    UI.paintSequencer();
+    UI.paintPatterns();
+    UI.paintNowPlaying();
+    S.save();
+    UI.toast('Pattern cleared — Ctrl+Z to undo', 'info');
+  }
+
   function importFile(file) {
     if (!file) return;
     if (file.size > 512 * 1024) { UI.toast('That file is too large to be a beat', 'error'); return; }
@@ -483,6 +519,8 @@
       if (e.key === 'Enter') { e.preventDefault(); savePreset(); }
     });
     $('btn-export').addEventListener('click', exportFile);
+    $('btn-midi').addEventListener('click', exportMidi);
+    $('btn-clear').addEventListener('click', clearPattern);
     $('btn-import').addEventListener('click', function () { $('import-file').click(); });
     $('import-file').addEventListener('change', function () {
       importFile(this.files && this.files[0]);
@@ -721,7 +759,7 @@
     A.setBpm(S.data.bpm);
     A.setViz(S.data.viz);
     UI.paintAll();
-    UI.setView('studio');
+    UI.setView(S.data.view || 'studio');
 
     var meta = document.querySelector('meta[name="theme-color"]');
     var t = LS.THEMES.filter(function (x) { return x.id === S.data.theme; })[0];
@@ -773,7 +811,8 @@
     play: play, stop: stop, toggle: toggle, panic: panic,
     undo: undo, redo: redo, haptic: haptic,
     savePreset: savePreset, loadPreset: loadPreset, deletePreset: deletePreset,
-    exportFile: exportFile, importFile: importFile,
+    exportFile: exportFile, importFile: importFile, exportMidi: exportMidi,
+    clearPattern: clearPattern,
     setBpm: setBpm, nudgeBpm: nudgeBpm, tapTempo: tapTempo,
     applyPreset: applyPreset, loadPattern: loadPattern, setVibe: setVibe,
     applyTheme: applyTheme, toggleAmbience: toggleAmbience,

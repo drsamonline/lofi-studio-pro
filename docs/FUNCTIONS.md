@@ -176,3 +176,13 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | `showSheet(id)` / `hideSheet(sheet)` | ui | The shortcut and iOS-install sheets | ✓ |
 | `undo()` / `redo()` | main | Restores a snapshot and repaints the whole UI and engine | ✓ |
 | `haptic(ms)` | main | A short vibration where the platform supports it | ◐ |
+
+## Added in 2.6.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `MIDI.build(data)` | midi | Four bars as a Standard MIDI File: drums on ch 10, parts on 1–3 | ✓ |
+| `noteToMidi(name)` | midi | "C#4" → 61 | ✓ |
+| `vlq(value)` | midi | Variable-length quantity for delta times | ✓ |
+| `exportMidi()` | main | Blob download of the `.mid` | ✓ |
+| `clearPattern()` | main | Empties all six tracks, undoable | ✓ |

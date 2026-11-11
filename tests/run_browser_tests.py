@@ -335,6 +335,74 @@ check("help: the sheet lists the gestures", js("document.querySelectorAll('#shor
 js("document.querySelector('#shortcuts [data-close]').click()"); drain(0.2)
 check("help: it closes again", js("document.getElementById('shortcuts').hidden") is True)
 
+# -------------------------------------------------------------------- MIDI
+import base64 as _b64, struct as _struct
+js("LS.App.loadPattern('chillhop'); LS.State.data.vibe='jazz'"); drain(0.4)
+mid = js("""(function(){
+  var b = LS.MIDI.build(LS.State.data);
+  var s=''; for (var i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
+  return btoa(s);
+})()""")
+raw = _b64.b64decode(mid) if isinstance(mid, str) else b""
+ok_header = raw[0:4] == b"MThd"
+fmt, ntrks, div = _struct.unpack(">HHH", raw[8:14]) if len(raw) > 14 else (9, 9, 9)
+check("midi: valid Standard MIDI File header",
+      ok_header and fmt == 0 and ntrks == 1 and div == 96,
+      "fmt=%s ntrks=%s div=%s bytes=%s" % (fmt, ntrks, div, len(raw)))
+
+# walk the track chunk
+pos = 22
+end = 22 + _struct.unpack(">I", raw[18:22])[0] if len(raw) > 22 else 0
+def _vlq(b, i):
+    v = 0
+    while True:
+        c = b[i]; i += 1
+        v = (v << 7) | (c & 0x7f)
+        if not c & 0x80: return v, i
+notes = {"drums": 0, "pitched": 0}
+tick = 0
+first_kick = None
+while pos < end:
+    delta, pos = _vlq(raw, pos)
+    tick += delta
+    st = raw[pos]
+    if st == 0xFF:
+        pos += 3
+        continue
+    kind = st & 0xF0
+    ch = st & 0x0F
+    note = raw[pos + 1]
+    vel = raw[pos + 2]
+    pos += 3
+    if kind == 0x90 and vel > 0:
+        if ch == 9:
+            notes["drums"] += 1
+            if note == 36 and first_kick is None: first_kick = tick
+        else:
+            notes["pitched"] += 1
+check("midi: drums land on channel 10 and pitched parts elsewhere",
+      notes["drums"] > 0 and notes["pitched"] > 0, json.dumps(notes))
+check("midi: chillhop writes 12 kicks over four bars", notes["drums"] >= 12,
+      json.dumps(notes))
+check("midi: the first kick sits on tick 0", first_kick == 0, first_kick)
+
+# --------------------------------------------------------------- clear pattern
+js("document.querySelector('.rail [data-view=\"settings\"]').click()"); drain(0.2)
+js("document.getElementById('btn-clear').click()"); drain(0.6)
+check("clear: empties every track",
+      js("LS.TRACK_IDS.every(function(t){return LS.State.data.steps[t].every(function(v){return !v})})") is True)
+js("document.getElementById('btn-undo').click()"); drain(0.6)
+check("clear: undo brings the pattern back",
+      js("LS.TRACK_IDS.some(function(t){return LS.State.data.steps[t].some(function(v){return v})})") is True)
+
+# --------------------------------------------------------------- view memory
+js("document.querySelector('.rail [data-view=\"mix\"]').click()"); drain(0.6)
+send("Page.reload"); drain(3.0)
+check("views: the last view is remembered across a reload",
+      js("document.getElementById('view-mix').hidden") is False,
+      js("document.body.dataset.section"))
+js("document.querySelector('.rail [data-view=\"studio\"]').click()"); drain(0.3)
+
 # ---------------------------------------------------------- presets & files
 js("localStorage.removeItem('lofi-presets-v1')")
 js("LS.App.setBpm(72); LS.App.loadPattern('dub'); LS.App.applyTheme('forest')"); drain(0.4)

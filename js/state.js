@@ -48,7 +48,8 @@
       debug: false,
       sleep: 0,
       metro: false,
-      countIn: false
+      countIn: false,
+      view: 'studio'
     };
   }
 
@@ -72,6 +73,7 @@
     d.sleep = [0, 15, 30, 60, 90].indexOf(s.sleep) > -1 ? s.sleep : 0;
     d.metro = bool(s.metro, false);
     d.countIn = bool(s.countIn, false);
+    d.view = ['studio', 'mix', 'amb', 'themes', 'settings'].indexOf(s.view) > -1 ? s.view : 'studio';
 
     var fx = obj(s.fx);
     d.fx.filter = Math.round(num(fx.filter, 400, 12000, d.fx.filter));

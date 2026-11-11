@@ -2,6 +2,21 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.6.0 — 11 November 2026
+
+The beat leaves the browser.
+
+### Added
+
+- **MIDI export.** Four bars of the current pattern as a Standard MIDI File — drums on channel 10, bass on 1, keys on 2, melody on 3 — so it opens in a DAW with the parts already separated and the chords already voiced. 96 ticks per quarter, velocities carried over from the accent/ghost setting.
+- **Clear the pattern** in Settings, with undo behind it.
+- **The last view is remembered** across a reload, so someone who works in the mixer opens in the mixer.
+
+### Notes
+
+- The MIDI writer is its own file (`js/midi.js`, ~120 lines) and the test parses the bytes back: header, format 0, one track, 96 PPQ, drums on channel 10, pitched parts elsewhere, and exactly 12 kicks over four bars of Chill Hop.
+- 122 browser checks, up from 115.
+
 ## 2.5.0 — 11 November 2026
 
 Nothing here adds a sound. All of it makes the app safer and easier to learn.
