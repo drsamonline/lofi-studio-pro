@@ -61,8 +61,8 @@ jobs:
           Get-ChildItem -Recurse -Include *-setup.exe,*.msi -Path src-tauri/target/release |
             Where-Object { $_.FullName -notmatch 'deps|build' } |
             ForEach-Object {
-              $kind = if ($_.Extension -eq '.msi') { 'msi' } else { 'setup.exe' }
-              Copy-Item $_.FullName -Destination "out/Lofi-Studio-Pro-$version-x64-$kind"
+              $kind = if ($_.Extension -eq '.msi') { '.msi' } else { '-setup.exe' }
+              Copy-Item $_.FullName -Destination "out/Lofi-Studio-Pro-$version-x64$kind"
             }
           Get-ChildItem out | Select-Object Name, Length
 

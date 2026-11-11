@@ -158,8 +158,8 @@ The web app is the source of truth; the wrappers are thin and live in CI, so not
 
 | Target | How | Built |
 | --- | --- | --- |
-| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.2.0.apk` (3.8 MB) — debug-signed, so sideload it |
-| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.2.0-x64-setup.exe` (2.1 MB) and `.msi` (3.0 MB) |
+| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.3.0.apk` (3.8 MB) — debug-signed, so sideload it |
+| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.3.0-x64-setup.exe` (2.1 MB) and `.msi` (2.9 MB) |
 | **PWA** | The live site installs to any home screen | tested — this is the build the 88 browser checks run against |
 
 All three are attached to the [latest release](https://github.com/drsamonline/lofi-studio-pro/releases/latest). Push a tag and CI rebuilds them from that exact commit.
