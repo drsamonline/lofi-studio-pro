@@ -125,3 +125,19 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | Offline shell | Service worker precache and navigation fallback | ✓ |
 | Install | `beforeinstallprompt` flow | — (needs a real browser prompt) |
 | Recording download | Blob → `<a download>` | ◐ (Blob produced; download not asserted) |
+
+## Added in 2.1.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `velFor(v)` | audio | Maps a step's stored weight (1 normal, 2 accent, 3 ghost) to a velocity | ✓ |
+| `makeImpulse(seconds, decay)` | audio | Synthesises the reverb impulse synchronously from decaying noise | ✓ |
+| `fadeIn()` / `fadeOut(done)` | audio | 30 ms ramp in, 45 ms ramp out — no click on transport start or stop | ✓ |
+| `bindPadPress(pad)` | ui | Tap toggles a step, a 420 ms hold cycles its weight | ✓ |
+| `cycleVelocity(id, i)` | ui | normal → accent → ghost → normal | ✓ |
+| `toast(msg, kind, action)` | ui | Now takes an optional action button (used by the update prompt) | ✓ |
+| `State.encode()` / `State.decode(hex)` | state | 6 tracks × 16 steps × 2 bits → 48 hex characters, and back | ✓ |
+| `keepAwake()` / `releaseAwake()` | main | Holds a screen wake lock while the beat plays | ◐ |
+| `mediaSession(state)` | main | Lock-screen title, artwork and play/pause state | ✓ |
+| `cycleSleepTimer()` | main | 0 → 15 → 30 → 60 → 90 minutes, then stops the transport | ✓ |
+| `shareLink()` / `copy()` / `fallbackCopy()` | main | Share sheet where available, clipboard otherwise | ◐ |
