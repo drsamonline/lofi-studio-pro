@@ -101,9 +101,12 @@
 
     A.master = new Tone.Volume(db(S.master));
     A.fader = new Tone.Gain(1);
-    A.limiter = new Tone.Limiter(-1);
+    /* -2.5 dBFS, not -1: a Tone.Limiter is a compressor with a 3 ms attack, not
+       a brick wall, and a sharp kick overshoots its ceiling. Measured on a CI
+       runner it reached +0.25 dBFS at -1, so the ceiling buys the overshoot. */
+    A.limiter = new Tone.Limiter(-2.5);
     A.comp = new Tone.Compressor({ threshold: -8, knee: 8, ratio: 2, attack: 0.008, release: 0.25 });
-    A.mixBus = new Tone.Gain(3.6);
+    A.mixBus = new Tone.Gain(3.3);
     /* Analyser size must be a power of two: Tone doubles it for fftSize, and
        an fftSize of 192 is an IndexSizeError that takes the whole engine down. */
     A.analyser = new Tone.Analyser(S.viz === 'wave' ? 'waveform' : 'fft', S.viz === 'wave' ? 512 : 128);
