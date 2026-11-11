@@ -1,6 +1,6 @@
 # Browser test report
 
-**122 of 122 checks passing.** Run in headless Chromium against the real app (not a mock), driving the DOM the way a person would: clicking, holding, dragging, typing, reloading and going offline.
+**128 of 128 checks passing.** Run in headless Chromium against the real app (not a mock), driving the DOM the way a person would: clicking, holding, dragging, typing, reloading and going offline.
 
 Regenerate with `python3 tests/run_browser_tests.py`.
 
@@ -21,7 +21,7 @@ Regenerate with `python3 tests/run_browser_tests.py`.
 | 13 | tempo: + button raises BPM and engine | PASS | 80.99999999999999 |
 | 14 | tempo: clamps at 60 | PASS | 60 |
 | 15 | tempo: clamps at 160 | PASS | 160 |
-| 16 | tempo: tap tempo matches the tapped interval | PASS | got 121, intervals imply 121 |
+| 16 | tempo: tap tempo matches the tapped interval | PASS | got 122, intervals imply 122 |
 | 17 | transport: stop halts transport when no ambience | PASS | stopped |
 | 18 | swing: keyboard adjusts swing state | PASS | 41 |
 | 19 | pads: clicking toggles a step in state | PASS | 1 |
@@ -53,86 +53,93 @@ Regenerate with `python3 tests/run_browser_tests.py`.
 | 45 | help: ? opens the shortcut sheet | PASS |  |
 | 46 | help: the sheet lists the gestures | PASS | 9 |
 | 47 | help: it closes again | PASS |  |
-| 48 | midi: valid Standard MIDI File header | PASS | fmt=0 ntrks=1 div=96 bytes=890 |
-| 49 | midi: drums land on channel 10 and pitched parts elsewhere | PASS | {"drums": 52, "pitched": 56} |
-| 50 | midi: chillhop writes 12 kicks over four bars | PASS | {"drums": 52, "pitched": 56} |
-| 51 | midi: the first kick sits on tick 0 | PASS | 0 |
-| 52 | clear: empties every track | PASS |  |
-| 53 | clear: undo brings the pattern back | PASS |  |
-| 54 | views: the last view is remembered across a reload | PASS | mix |
-| 55 | presets: saving adds a named entry | PASS | ["Rainy Tuesday"] |
-| 56 | presets: the list renders a row per preset | PASS |  |
-| 57 | presets: the entry is written to localStorage | PASS |  |
-| 58 | presets: loading restores tempo, pattern and theme | PASS | {"bpm":72,"p":"dub","t":"forest"} |
-| 59 | presets: loading does not touch preferences | PASS |  |
-| 60 | export: produces a tagged payload with the whole beat | PASS | {"app":"lofi-studio-pro","version":2,"exported":"2026-11-11T07:16:37.887Z","s... |
-| 61 | import: rejects a file that is not a beat | PASS |  |
-| 62 | import: accepts a beat and restores it | PASS | {"bad":true,"bpm":101,"vibe":"blues","kick":2} |
-| 63 | presets: deleting removes the entry and the row | PASS |  |
-| 64 | metronome: the switch writes state | PASS |  |
-| 65 | count-in: the beat waits a bar before starting | PASS | 0 |
-| 66 | count-in: the beat enters after the count-in bar | PASS | 6 |
-| 67 | mixer: a pan slider writes per-track pan | PASS | -60 |
-| 68 | mixer: pan survives into the audio channel | PASS |  |
-| 69 | media session: metadata set while playing | PASS |  |
-| 70 | audio: loud pattern peaks below full scale with headroom | PASS | {"peak":0.8,"rms":0.196,"crest":4.1,"clip":0} |
-| 71 | audio: crest factor stays musical (not squashed) | PASS | {"peak":0.8,"rms":0.196,"crest":4.1,"clip":0} |
-| 72 | audio: the capture actually contains the beat | PASS | {"peak":0.8,"rms":0.196,"crest":4.1,"clip":0} |
-| 73 | fx: all six knobs respond and write state | PASS | {"filter":166,"tape":51,"crackle":51,"reverb":51,"chorus":51,"wow":51} |
-| 74 | fx: filter value reached the Tone.Filter | PASS |  |
-| 75 | themes: ten themes, nine distinct accents (black reuses the red) | PASS | 9 distinct |
-| 76 | themes: meta theme-color follows the theme | PASS | 10 distinct |
-| 77 | themes: every theme defines bg and accent | PASS |  |
-| 78 | presets: Sleep applies tempo, pattern and chords | PASS | {"bpm":60,"p":"ambient","v":"dreamy"} |
-| 79 | presets: applying a preset starts playback | PASS |  |
-| 80 | presets: filter knob followed the preset | PASS | 2200 |
-| 81 | surprise: changes pattern, theme and tempo | PASS | {"p": "trap", "t": "forest", "b": 97} |
-| 82 | surprise: keeps playing (regression from 1.0) | PASS | started |
-| 83 | surprise: still playing 3s later | PASS |  |
-| 84 | views: ambience view becomes visible | PASS |  |
-| 85 | ambience: rain toggles on and creates a layer | PASS |  |
-| 86 | ambience: transport runs for ambience with beat stopped | PASS |  |
-| 87 | ambience: volume slider writes state | PASS |  |
-| 88 | ambience: toggling off disposes the layer | PASS |  |
-| 89 | settings: auto-save toggles off | PASS |  |
-| 90 | settings: auto-fill toggles | PASS |  |
-| 91 | settings: visualiser switches to spectrum | PASS | bars |
-| 92 | settings: debug toggles | PASS |  |
-| 93 | recording: starts and stops a take | PASS | {"started":true,"ended":false} |
-| 94 | reset: returns every value to defaults | PASS | {"bpm":80,"theme":"purple","pat":"chillhop"} |
-| 95 | persistence: state written to localStorage | PASS | {"v":2,"bpm":104,"swing":10,"master":80,"patternId":"dub","s |
-| 96 | persistence: survives a reload | PASS | {"bpm":104,"t":"ocean","p":"dub"} |
-| 97 | persistence: reload raises no console errors | PASS |  |
-| 98 | robustness: corrupt save falls back to defaults without crashing | PASS | pads=96 theme=purple |
-| 99 | robustness: out-of-range values are clamped | PASS | {"vol":100,"filter":400} |
-| 100 | robustness: no console errors on a bad save | PASS |  |
-| 101 | migration: a v1 save is carried over | PASS | {"bpm":77,"t":"forest","v":"sad","vol":60} |
-| 102 | migration: old key removed, no console errors | PASS |  |
-| 103 | pwa: service worker controls the page | PASS |  |
-| 104 | pwa: manifest is valid json with icons | PASS |  |
-| 105 | pwa: shell precached (>=12 entries) | PASS | 15 |
-| 106 | layout 360px: no horizontal page overflow | PASS | 0 |
-| 107 | layout 360px: bottom tab bar shown, rail hidden | PASS | tabs=grid rail=none |
-| 108 | layout 360px: pads stay tappable (>=40px) | PASS | 40x40 |
-| 109 | layout 360px: sequencer scrolls instead of shrinking | PASS |  |
-| 110 | layout 360px: transport bar present | PASS |  |
-| 111 | layout 768px: rail replaces the tab bar | PASS | tabs=none rail=flex |
-| 112 | layout 768px: no page overflow | PASS | 0 |
-| 113 | layout 1280px: no page overflow | PASS | 0 |
-| 114 | layout 1280px: sequencer fits without scrolling | PASS |  |
-| 115 | layout 1280px: pads are at least 44x40 | PASS | 58.7x45.1 |
-| 116 | layout: no target below the 24px WCAG minimum | PASS | [] |
-| 117 | layout: track labels stay pinned while the grid scrolls | PASS | {"headLeft": 25, "padLeft": -192, "scrollLeft": 300} |
-| 118 | offline: app opens with the server down | PASS | Lofi Studio Pro — a lofi beat machine in your browser |
-| 119 | offline: sequencer renders offline | PASS |  |
-| 120 | offline: library still deferred offline | PASS |  |
-| 121 | offline: the library loads from cache and plays | PASS | Tone 14.8.49 |
-| 122 | offline: no console errors offline | PASS |  |
+| 48 | song: tapping an empty slot captures the current pattern | PASS |  |
+| 49 | song: a second slot captures a different pattern | PASS |  |
+| 50 | song: the toggle arms song mode | PASS |  |
+| 51 | song: playback starts on the first filled slot | PASS | 0 |
+| 52 | song: the song advances to the next slot after its bars | PASS | {"step":4,"bar":3,"slot":1,"songBar":2} |
+| 53 | song: turning it off returns to loop mode | PASS |  |
+| 54 | midi: valid Standard MIDI File header | PASS | fmt=0 ntrks=1 div=96 bytes=890 |
+| 55 | midi: drums land on channel 10 and pitched parts elsewhere | PASS | {"drums": 52, "pitched": 56} |
+| 56 | midi: chillhop writes 12 kicks over four bars | PASS | {"drums": 52, "pitched": 56} |
+| 57 | midi: the first kick sits on tick 0 | PASS | 0 |
+| 58 | clear: empties every track | PASS |  |
+| 59 | clear: undo brings the pattern back | PASS |  |
+| 60 | views: the last view is remembered across a reload | PASS | mix |
+| 61 | presets: saving adds a named entry | PASS | ["Rainy Tuesday"] |
+| 62 | presets: the list renders a row per preset | PASS |  |
+| 63 | presets: the entry is written to localStorage | PASS |  |
+| 64 | presets: loading restores tempo, pattern and theme | PASS | {"bpm":72,"p":"dub","t":"forest"} |
+| 65 | presets: loading does not touch preferences | PASS |  |
+| 66 | export: produces a tagged payload with the whole beat | PASS | {"app":"lofi-studio-pro","version":2,"exported":"2026-11-11T07:46:27.017Z","s... |
+| 67 | import: rejects a file that is not a beat | PASS |  |
+| 68 | import: accepts a beat and restores it | PASS | {"bad":true,"bpm":101,"vibe":"blues","kick":2} |
+| 69 | presets: deleting removes the entry and the row | PASS |  |
+| 70 | metronome: the switch writes state | PASS |  |
+| 71 | count-in: the beat waits a bar before starting | PASS | 0 |
+| 72 | count-in: the beat enters after the count-in bar | PASS | 6 |
+| 73 | mixer: a pan slider writes per-track pan | PASS | -60 |
+| 74 | mixer: pan survives into the audio channel | PASS |  |
+| 75 | media session: metadata set while playing | PASS |  |
+| 76 | audio: loud pattern peaks below full scale with headroom | PASS | {"peak":0.846,"rms":0.195,"crest":4.3,"clip":0} |
+| 77 | audio: crest factor stays musical (not squashed) | PASS | {"peak":0.846,"rms":0.195,"crest":4.3,"clip":0} |
+| 78 | audio: the capture actually contains the beat | PASS | {"peak":0.846,"rms":0.195,"crest":4.3,"clip":0} |
+| 79 | fx: all six knobs respond and write state | PASS | {"filter":166,"tape":51,"crackle":51,"reverb":51,"chorus":51,"wow":51} |
+| 80 | fx: filter value reached the Tone.Filter | PASS |  |
+| 81 | themes: ten themes, nine distinct accents (black reuses the red) | PASS | 9 distinct |
+| 82 | themes: meta theme-color follows the theme | PASS | 10 distinct |
+| 83 | themes: every theme defines bg and accent | PASS |  |
+| 84 | presets: Sleep applies tempo, pattern and chords | PASS | {"bpm":60,"p":"ambient","v":"dreamy"} |
+| 85 | presets: applying a preset starts playback | PASS |  |
+| 86 | presets: filter knob followed the preset | PASS | 2200 |
+| 87 | surprise: changes pattern, theme and tempo | PASS | {"p": "synthwave", "t": "purple", "b": 115} |
+| 88 | surprise: keeps playing (regression from 1.0) | PASS | started |
+| 89 | surprise: still playing 3s later | PASS |  |
+| 90 | views: ambience view becomes visible | PASS |  |
+| 91 | ambience: rain toggles on and creates a layer | PASS |  |
+| 92 | ambience: transport runs for ambience with beat stopped | PASS |  |
+| 93 | ambience: volume slider writes state | PASS |  |
+| 94 | ambience: toggling off disposes the layer | PASS |  |
+| 95 | settings: auto-save toggles off | PASS |  |
+| 96 | settings: auto-fill toggles | PASS |  |
+| 97 | settings: visualiser switches to spectrum | PASS | bars |
+| 98 | settings: debug toggles | PASS |  |
+| 99 | recording: starts and stops a take | PASS | {"started":true,"ended":false} |
+| 100 | reset: returns every value to defaults | PASS | {"bpm":80,"theme":"purple","pat":"chillhop"} |
+| 101 | persistence: state written to localStorage | PASS | {"v":2,"bpm":104,"swing":10,"master":80,"patternId":"dub","s |
+| 102 | persistence: survives a reload | PASS | {"bpm":104,"t":"ocean","p":"dub"} |
+| 103 | persistence: reload raises no console errors | PASS |  |
+| 104 | robustness: corrupt save falls back to defaults without crashing | PASS | pads=96 theme=purple |
+| 105 | robustness: out-of-range values are clamped | PASS | {"vol":100,"filter":400} |
+| 106 | robustness: no console errors on a bad save | PASS |  |
+| 107 | migration: a v1 save is carried over | PASS | {"bpm":77,"t":"forest","v":"sad","vol":60} |
+| 108 | migration: old key removed, no console errors | PASS |  |
+| 109 | pwa: service worker controls the page | PASS |  |
+| 110 | pwa: manifest is valid json with icons | PASS |  |
+| 111 | pwa: shell precached (>=12 entries) | PASS | 15 |
+| 112 | layout 360px: no horizontal page overflow | PASS | 0 |
+| 113 | layout 360px: bottom tab bar shown, rail hidden | PASS | tabs=grid rail=none |
+| 114 | layout 360px: pads stay tappable (>=40px) | PASS | 40x40 |
+| 115 | layout 360px: sequencer scrolls instead of shrinking | PASS |  |
+| 116 | layout 360px: transport bar present | PASS |  |
+| 117 | layout 768px: rail replaces the tab bar | PASS | tabs=none rail=flex |
+| 118 | layout 768px: no page overflow | PASS | 0 |
+| 119 | layout 1280px: no page overflow | PASS | 0 |
+| 120 | layout 1280px: sequencer fits without scrolling | PASS |  |
+| 121 | layout 1280px: pads are at least 44x40 | PASS | 58.7x45.1 |
+| 122 | layout: no target below the 24px WCAG minimum | PASS | [] |
+| 123 | layout: track labels stay pinned while the grid scrolls | PASS | {"headLeft": 25, "padLeft": -192, "scrollLeft": 300} |
+| 124 | offline: app opens with the server down | PASS | Lofi Studio Pro — a lofi beat machine in your browser |
+| 125 | offline: sequencer renders offline | PASS |  |
+| 126 | offline: library still deferred offline | PASS |  |
+| 127 | offline: the library loads from cache and plays | PASS | Tone 14.8.49 |
+| 128 | offline: no console errors offline | PASS |  |
 
 ## What is covered
 
 - **Boot** — the audio library is deferred until the first gesture, then loads from `vendor/`; no console errors; 96 pads, 6 activity presets, 10 patterns, 12 chord sets, 10 themes, 9 ambience layers, 6 faders, 6 knobs.
 - **Transport** — play starts the Tone transport, the playhead walks the grid, the bar·beat readout advances, stop halts it, tempo clamps at 60 and 160, tap tempo matches the tapped interval.
+- **Song mode** — tapping an empty slot captures the current pattern, a second slot captures a different one, the toggle arms the mode, playback starts on the first filled slot, advances after its bar count, and returns to loop mode.
 - **Metronome and count-in** — the switch writes state; with a count-in armed the beat waits a bar, then enters.
 - **Sequencer** — pad toggles write state and aria, editing marks the pattern custom, patterns load 16 steps per track, arrow keys move focus.
 - **Gestures** — holding a pad raises it to an accent and then a ghost; dragging across pads paints a run including the one it started on; holding a track name empties the row and the undo toast restores it.

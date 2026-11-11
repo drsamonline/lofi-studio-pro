@@ -1,6 +1,6 @@
 # Roadmap
 
-**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. **Shipped in 2.4.0:** deferred audio library, metronome, count-in, per-track pan. **Shipped in 2.5.0:** undo/redo, shortcut sheet, haptics. **Shipped in 2.6.0:** MIDI export, clear pattern, remembered view. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
+**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. **Shipped in 2.4.0:** deferred audio library, metronome, count-in, per-track pan. **Shipped in 2.5.0:** undo/redo, shortcut sheet, haptics. **Shipped in 2.6.0:** MIDI export, clear pattern, remembered view. **Shipped in 2.7.0:** song mode. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
 
 What to add next, ordered by value per line of code. Each item carries an effort estimate and a bloat cost, because the constraint that matters for this app is not features — it is that it stays one screen that loads instantly.
 
@@ -65,7 +65,7 @@ The first load is already small (≈120 KB of app code plus a 349 KB audio libra
 
 | # | Idea | Why | Effort |
 | --- | --- | --- | --- |
-| 27 | **Song mode** — chain patterns A→B→A→C with bar counts | Turns a loop into a track | L |
+| 27 | ✅ 2.7.0 **Song mode** — chain patterns A→B→A→C with bar counts | Turns a loop into a track | L |
 | 28 | ✅ 2.6.0 **MIDI export** of the pattern | The bridge to a real DAW, and the thing that makes this usable by producers | M |
 | 29 | **Sample import** — drop a drum hit onto a track | Breaks the "no assets" purity, but it is the most requested feature of every drum machine | L |
 | 30 | **Web MIDI input** — play the pads from a controller | Sits oddly with a browser toy, perfectly with a $60 MIDI keyboard | M |

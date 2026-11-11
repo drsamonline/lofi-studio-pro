@@ -693,6 +693,21 @@ input[type="range"]::-moz-range-thumb {
 }
 #btn-undo[disabled] { opacity: .35; cursor: default; }
 
+.song-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.slot {
+  min-height: 54px; border-radius: var(--r-md);
+  border: 1px solid var(--line); background: var(--panel-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  cursor: pointer; color: var(--dim); padding: 6px 4px;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: border-color .16s, background .16s, color .16s;
+}
+.slot .slot-id { font-size: 13px; font-weight: 750; letter-spacing: .04em; }
+.slot .slot-name { font-size: 9.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.slot.filled { color: var(--text); border-color: color-mix(in srgb, var(--acc) 40%, var(--line)); }
+.slot.playing { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 16%, var(--panel-2)); color: var(--text); box-shadow: 0 0 0 1px var(--acc) inset; }
+.song-hint { font-size: 10.5px; color: var(--dim); margin-top: 10px; line-height: 1.45; }
+
 /* ----------------------------------------------------------------- presets */
 .preset-save { display: flex; gap: 8px; margin-bottom: 10px; }
 .text-input {

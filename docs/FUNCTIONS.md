@@ -186,3 +186,14 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | `vlq(value)` | midi | Variable-length quantity for delta times | ✓ |
 | `exportMidi()` | main | Blob download of the `.mid` | ✓ |
 | `clearPattern()` | main | Empties all six tracks, undoable | ✓ |
+
+## Added in 2.7.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `State.captureSlot(i)` | state | Copies the live pattern and chord set into a song slot | ✓ |
+| `State.loadSlot(i)` / `clearSlot(i)` | state | Recall a slot as the live pattern, or empty it | ✓ |
+| `advanceSong()` | audio | Walks A → B → C → D at the bar line, honouring each slot's bar count | ✓ |
+| `enterSlot(i, first)` | main | Loads a slot and repaints the grid mid-playback | ✓ |
+| `toggleSong()` | main | Loop ↔ Song, refusing to arm with no slots filled | ✓ |
+| `renderSong()` | ui | The four-slot strip and its playing highlight | ✓ |

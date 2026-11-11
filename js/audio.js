@@ -324,13 +324,17 @@
     clearSequence();
     A.step = -1;
     A.bar = -1;
+    resetSong();
     var startAt = countIn ? '+1m' : 0;
     A.countingIn = !!countIn;
     A.seqId = Tone.Transport.scheduleRepeat(function (time) {
       var i = (A.step + 1) % LS.STEP_COUNT;
       A.step = i;
       if (i === 0) A.countingIn = false;
-      if (i === 0) A.bar = (A.bar + 1) % 4;
+      if (i === 0) {
+        A.bar = (A.bar + 1) % 4;
+        advanceSong();
+      }
 
       var at = time;
       var swing = LS.State.data.swing;
@@ -345,6 +349,38 @@
       }, time);
     }, '16n', startAt);
   }
+
+  /* Song mode: each slot plays for its own bar count, then the next filled
+     slot takes over. The slot's step array becomes the live pattern, so an
+     edit made while it plays is written into that slot — which is what you
+     want when you are arranging. */
+  function advanceSong() {
+    var S = LS.State.data;
+    if (!S.song || !S.song.on) { A.songBar = 0; return; }
+    var filled = S.song.slots.map(function (sl, idx) { return sl ? idx : -1; })
+      .filter(function (idx) { return idx >= 0; });
+    if (!filled.length) return;
+
+    if (A.slot === null || filled.indexOf(A.slot) < 0) {
+      A.slot = filled[0];
+      A.songBar = 1;                 // the bar that just started is its first
+      if (LS.App && LS.App.enterSlot) LS.App.enterSlot(A.slot, true);
+      return;
+    }
+
+    var slot = S.song.slots[A.slot];
+    var bars = (slot && slot.bars) || 2;
+    if (A.songBar >= bars) {
+      var next = filled[(filled.indexOf(A.slot) + 1) % filled.length];
+      A.slot = next;
+      A.songBar = 1;
+      if (LS.App && LS.App.enterSlot) LS.App.enterSlot(next, false);
+    } else {
+      A.songBar++;
+    }
+  }
+
+  function resetSong() { A.slot = null; A.songBar = 0; }
 
   function clearSequence() {
     if (typeof Tone === 'undefined') return;
@@ -694,6 +730,6 @@
     recordStop: recordStop,
     panic: panic,
     dispose: dispose,
-    position: function () { return { step: A.step, bar: A.bar }; }
+    position: function () { return { step: A.step, bar: A.bar, slot: A.slot, songBar: A.songBar }; }
   };
 })(window.LS = window.LS || {});

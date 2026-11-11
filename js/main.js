@@ -23,6 +23,7 @@
   function setPlaying(v) {
     playing = v;
     UI.paintTransport(v);
+    if (v && S.data.song.on) UI.paintSong();
     if (v) { keepAwake(); mediaSession('playing'); }
     else { releaseAwake(); mediaSession('paused'); }
   }
@@ -215,6 +216,81 @@
     UI.paintAmbience();
     S.saveSoon();
     return true;
+  }
+
+  /* ---------------------------------------------------------------- song */
+  function enterSlot(i, first) {
+    var slot = S.loadSlot(i);
+    if (!slot) return;
+    if (!first) {
+      UI.paintSequencer();
+      UI.paintVibes();
+      UI.paintNowPlaying();
+    }
+    UI.paintSong();
+  }
+
+  function toggleSong() {
+    S.data.song.on = !S.data.song.on;
+    var filled = S.data.song.slots.filter(Boolean).length;
+    if (S.data.song.on && !filled) {
+      S.data.song.on = false;
+      UI.toast('Capture a pattern into a slot first', 'warn');
+    } else if (S.data.song.on) {
+      UI.toast('Song mode — ' + filled + ' slot' + (filled > 1 ? 's' : '') + ', 2 bars each', 'success');
+    } else {
+      UI.toast('Loop mode', 'info');
+    }
+    UI.paintSong();
+    S.saveSoon();
+  }
+
+  /* One delegated handler: the slot buttons are rebuilt on every repaint, so
+     binding to the elements themselves would silently die after the first
+     capture. */
+  function bindSongSlots() {
+    var host = document.getElementById('song-slots');
+    if (!host) return;
+    var timer = null, held = false, index = -1;
+
+    function slotOf(e) {
+      var el = e.target.closest ? e.target.closest('[data-slot]') : null;
+      return el ? parseInt(el.dataset.slot, 10) : -1;
+    }
+
+    host.addEventListener('pointerdown', function (e) {
+      index = slotOf(e);
+      if (index < 0) return;
+      held = false;
+      timer = setTimeout(function () {
+        held = true;
+        if (!S.data.song.slots[index]) return;
+        S.clearSlot(index);
+        UI.paintSong();
+        S.save();
+        UI.toast('Slot ' + String.fromCharCode(65 + index) + ' cleared', 'info');
+      }, 600);
+    });
+    host.addEventListener('pointerup', function () { clearTimeout(timer); });
+    host.addEventListener('pointerleave', function () { clearTimeout(timer); });
+
+    host.addEventListener('click', function (e) {
+      var i = slotOf(e);
+      if (i < 0) return;
+      if (held) { held = false; return; }
+      if (S.data.song.slots[i]) {
+        S.loadSlot(i);
+        UI.paintSequencer();
+        UI.paintVibes();
+        UI.paintNowPlaying();
+        UI.toast('Loaded slot ' + String.fromCharCode(65 + i), 'info');
+      } else {
+        S.captureSlot(i);
+        UI.paintSong();
+        UI.toast('Captured into slot ' + String.fromCharCode(65 + i), 'success');
+      }
+      S.save();
+    });
   }
 
   /* ------------------------------------------------------------- undo / redo */
@@ -521,6 +597,8 @@
     $('btn-export').addEventListener('click', exportFile);
     $('btn-midi').addEventListener('click', exportMidi);
     $('btn-clear').addEventListener('click', clearPattern);
+    $('btn-song').addEventListener('click', toggleSong);
+    bindSongSlots();
     $('btn-import').addEventListener('click', function () { $('import-file').click(); });
     $('import-file').addEventListener('change', function () {
       importFile(this.files && this.files[0]);
@@ -810,6 +888,7 @@
   LS.App = {
     play: play, stop: stop, toggle: toggle, panic: panic,
     undo: undo, redo: redo, haptic: haptic,
+    enterSlot: enterSlot, toggleSong: toggleSong,
     savePreset: savePreset, loadPreset: loadPreset, deletePreset: deletePreset,
     exportFile: exportFile, importFile: importFile, exportMidi: exportMidi,
     clearPattern: clearPattern,

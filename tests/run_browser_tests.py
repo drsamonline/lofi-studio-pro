@@ -335,6 +335,29 @@ check("help: the sheet lists the gestures", js("document.querySelectorAll('#shor
 js("document.querySelector('#shortcuts [data-close]').click()"); drain(0.2)
 check("help: it closes again", js("document.getElementById('shortcuts').hidden") is True)
 
+# -------------------------------------------------------------------- song
+js("LS.App.loadPattern('chillhop'); LS.App.setVibe('jazz')"); drain(0.4)
+js("document.querySelector('#song-slots [data-slot=\"0\"]').click()"); drain(0.5)
+check("song: tapping an empty slot captures the current pattern",
+      js("!!LS.State.data.song.slots[0]") is True and
+      js("document.querySelector('#song-slots [data-slot=\"0\"]').classList.contains('filled')") is True)
+js("LS.App.loadPattern('trap'); LS.App.setVibe('dark')"); drain(0.4)
+js("document.querySelector('#song-slots [data-slot=\"1\"]').click()"); drain(0.5)
+check("song: a second slot captures a different pattern",
+      js("LS.State.data.song.slots[1].vibe") == "dark")
+js("document.getElementById('btn-song').click()"); drain(0.4)
+check("song: the toggle arms song mode", js("LS.State.data.song.on") is True and
+      js("document.getElementById('btn-song').textContent") == "Song")
+js("LS.App.stop(); LS.App.setBpm(120)"); drain(0.3)
+js("document.getElementById('btn-play').click()"); drain(1.0)
+check("song: playback starts on the first filled slot",
+      js("LS.Audio.position().slot") == 0, js("LS.Audio.position().slot"))
+drain(7.5)   # two bars at 120bpm = 4s, plus the start of the next slot
+check("song: the song advances to the next slot after its bars",
+      js("LS.Audio.position().slot") == 1, js("JSON.stringify(LS.Audio.position())"))
+js("LS.App.stop(); document.getElementById('btn-song').click()"); drain(0.6)
+check("song: turning it off returns to loop mode", js("LS.State.data.song.on") is False)
+
 # -------------------------------------------------------------------- MIDI
 import base64 as _b64, struct as _struct
 js("LS.App.loadPattern('chillhop'); LS.State.data.vibe='jazz'"); drain(0.4)

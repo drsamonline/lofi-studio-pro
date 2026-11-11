@@ -631,6 +631,33 @@
     });
   }
 
+  function renderSong() {
+    var host = document.getElementById('song-slots');
+    if (!host) return;
+    var S = LS.State.data;
+    host.innerHTML = '';
+    var playing = LS.Audio && LS.Audio.position ? LS.Audio.position().slot : null;
+    for (var i = 0; i < 4; i++) {
+      var slot = S.song.slots[i];
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'slot' + (slot ? ' filled' : '') + (playing === i && S.song.on ? ' playing' : '');
+      b.dataset.slot = String(i);
+      b.setAttribute('aria-label', 'Song slot ' + String.fromCharCode(65 + i) + (slot ? ', filled' : ', empty'));
+      b.innerHTML = '<span class="slot-id">' + String.fromCharCode(65 + i) + '</span>' +
+        '<span class="slot-name">' +
+          (slot ? (slot.patternId && LS.PATTERNS[slot.patternId] ? LS.PATTERNS[slot.patternId].name : 'custom') : 'empty') +
+        '</span>';
+      host.appendChild(b);
+    }
+    var tog = document.getElementById('btn-song');
+    if (tog) {
+      tog.textContent = S.song.on ? 'Song' : 'Loop';
+      tog.classList.toggle('on', S.song.on);
+      tog.setAttribute('aria-pressed', S.song.on ? 'true' : 'false');
+    }
+  }
+
   function paintHistory() {
     var b = document.getElementById('btn-undo');
     if (b) b.disabled = !LS.State.canUndo();
@@ -874,12 +901,14 @@
       paintAll();
       renderPresets();
       paintHistory();
+      renderSong();
     },
     toast: toast,
     highlight: highlight,
     clearHighlight: clearHighlight,
     setView: setView,
     paintAll: paintAll,
+    paintSong: renderSong,
     paintSequencer: paintSequencer,
     paintPatterns: paintPatterns,
     paintVibes: paintVibes,
@@ -890,6 +919,7 @@
     paintTransport: paintTransport,
     paintSettings: paintSettings,
     paintHistory: paintHistory,
+    renderSong: renderSong,
     showSheet: showSheet,
     hideSheet: hideSheet,
     renderPresets: renderPresets,

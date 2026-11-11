@@ -7,10 +7,10 @@
 [**▶ Open the app**](https://drsamonline.github.io/lofi-studio-pro/) · [Landing page](https://drsamonline.github.io/lofi-studio-pro/landing.html) · [Report a bug](https://github.com/drsamonline/lofi-studio-pro/issues)
 
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c6ef5)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.6.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.7.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%C2%B7%20offline-5a0fc8)](manifest.webmanifest)
 [![Tests](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml/badge.svg)](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml)
-[![122 browser checks](https://img.shields.io/badge/browser%20checks-122%20passing-2ea44f)](docs/TEST-REPORT.md)
+[![128 browser checks](https://img.shields.io/badge/browser%20checks-128%20passing-2ea44f)](docs/TEST-REPORT.md)
 [![Build](https://img.shields.io/badge/build-none%20required-informational)](.)
 [![No trackers](https://img.shields.io/badge/trackers-zero-brightgreen)](.)
 
@@ -37,6 +37,8 @@ It was built for the ninety seconds between two tasks: no login, no library, no 
 **Ten themes** — from a near-black studio to a paper-white daytime mode, all driven by CSS custom properties so the swap is instant.
 
 **Recording** — hit the record button to capture a take as a downloadable audio file, with an optional metronome and a one-bar count-in.
+
+**Song mode** — four slots, two bars each. Capture a pattern into A, another into B, flip the toggle and the sequencer walks A → B → C → D, swapping the pattern and its chords at the bar line. While a slot plays it is the live pattern, so edits mid-song land in that slot.
 
 **Undo** — every edit is undoable, and a drag across twelve pads is one undo, not twelve. `Ctrl/⌘ Z`, or the button in the sequencer header.
 
@@ -89,6 +91,7 @@ Opening `index.html` straight from disk also works; only the service worker is s
 | Save / load a preset | — | Settings → My presets |
 | Export / import a file | — | Settings, or drop a `.json` on the window |
 | Export MIDI | — | Settings → Export as MIDI |
+| Song mode | — | Song block: tap a slot to capture, hold to clear |
 
 Knobs and faders accept a drag, a scroll wheel, and arrow keys. Double-click a knob to reset it. Hold `Shift` while dragging for fine adjustment.
 
@@ -119,8 +122,10 @@ The figure is generated from real captures of the running app, not from a mock: 
 | <img src="screenshots/desktop.png" alt="Studio view"> | <img src="screenshots/mix.png" alt="Mixer and effects"> |
 | **Ambience** | **Light theme** |
 | <img src="screenshots/ambience.png" alt="Ambience layers"> | <img src="screenshots/light.png" alt="Light theme"> |
-| **Settings, presets and files** | **Mixer** |
-| <img src="screenshots/settings.png" alt="Settings with saved presets"> | <img src="screenshots/mix.png" alt="Mixer and effects"> |
+| **Song mode** | **Mixer** |
+| <img src="screenshots/song.png" alt="Song slots under the sequencer"> | <img src="screenshots/mix.png" alt="Mixer and effects"> |
+| **Settings, presets and files** | **Ambience** |
+| <img src="screenshots/settings.png" alt="Settings with saved presets"> | <img src="screenshots/ambience.png" alt="Ambience layers"> |
 
 <div align="center">
 <img src="screenshots/mobile.png" alt="Lofi Studio Pro on a phone" width="300">
@@ -156,7 +161,7 @@ Three decisions worth knowing:
 
 ## Testing
 
-122 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, presets, export and import, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
+128 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, presets, export and import, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
 
 ```bash
 pip install websocket-client && python3 tests/run_browser_tests.py
@@ -170,8 +175,8 @@ The web app is the source of truth; the wrappers are thin and live in CI, so not
 
 | Target | How | Built |
 | --- | --- | --- |
-| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.6.0.apk` (3.8 MB) — debug-signed, so sideload it |
-| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.6.0-x64-setup.exe` (2.1 MB) and `.msi` (2.9 MB) |
+| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.7.0.apk` (3.8 MB) — debug-signed, so sideload it |
+| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.7.0-x64-setup.exe` (2.1 MB) and `.msi` (2.9 MB) |
 | **PWA** | The live site installs to any home screen | tested — this is the build the 88 browser checks run against |
 
 All three are attached to the [latest release](https://github.com/drsamonline/lofi-studio-pro/releases/latest). Push a tag and CI rebuilds them from that exact commit.

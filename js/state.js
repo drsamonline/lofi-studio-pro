@@ -49,7 +49,8 @@
       sleep: 0,
       metro: false,
       countIn: false,
-      view: 'studio'
+      view: 'studio',
+      song: { on: false, slots: [null, null, null, null] }
     };
   }
 
@@ -74,6 +75,28 @@
     d.metro = bool(s.metro, false);
     d.countIn = bool(s.countIn, false);
     d.view = ['studio', 'mix', 'amb', 'themes', 'settings'].indexOf(s.view) > -1 ? s.view : 'studio';
+
+    var song = obj(s.song);
+    d.song.on = bool(song.on, false);
+    if (Array.isArray(song.slots)) {
+      d.song.slots = [0, 1, 2, 3].map(function (i) {
+        var slot = obj(song.slots[i]);
+        if (!slot.steps) return null;
+        var steps = {};
+        LS.TRACK_IDS.forEach(function (t) {
+          var row = slot.steps[t];
+          steps[t] = (Array.isArray(row) && row.length === LS.STEP_COUNT)
+            ? row.map(function (x) { var n = parseInt(x, 10); return isFinite(n) ? Math.min(3, Math.max(0, n)) : 0; })
+            : new Array(LS.STEP_COUNT).fill(0);
+        });
+        return {
+          steps: steps,
+          vibe: oneOf(LS.VIBE_ORDER, slot.vibe, 'jazz'),
+          patternId: oneOf(LS.PATTERN_ORDER, slot.patternId, null),
+          bars: Math.round(num(slot.bars, 1, 8, 2))
+        };
+      });
+    }
 
     var fx = obj(s.fx);
     d.fx.filter = Math.round(num(fx.filter, 400, 12000, d.fx.filter));
@@ -299,6 +322,35 @@
       var clean = merge(snap), d = State.data;
       SNAP_KEYS.forEach(function (k) { d[k] = clean[k]; });
       return d;
+    },
+
+    /* ---------------------------------------------------------------- song
+       A song is four slots of two bars each. A slot owns its own copy of the
+       steps, so a custom pattern can be part of a song without the built-in
+       patterns having to cover every case. */
+    captureSlot: function (i) {
+      var d = State.data;
+      if (i < 0 || i > 3) return null;
+      d.song.slots[i] = {
+        steps: JSON.parse(JSON.stringify(d.steps)),
+        vibe: d.vibe,
+        patternId: d.patternId,       // a label, not a link
+        bars: 2
+      };
+      return d.song.slots[i];
+    },
+
+    loadSlot: function (i) {
+      var slot = State.data.song.slots[i];
+      if (!slot) return null;
+      State.data.steps = slot.steps;   // the slot becomes the live pattern
+      State.data.vibe = slot.vibe;
+      State.data.patternId = null;
+      return slot;
+    },
+
+    clearSlot: function (i) {
+      State.data.song.slots[i] = null;
     },
 
     /* ------------------------------------------------------------- presets */

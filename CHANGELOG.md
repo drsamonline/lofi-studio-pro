@@ -2,6 +2,24 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.7.0 — 11 November 2026
+
+A loop becomes a song.
+
+### Added
+
+- **Song mode.** Four slots, two bars each. Tap an empty slot to capture whatever you are working on, tap a filled one to load it, hold it to clear it. Flip the Loop/Song toggle and the sequencer walks A → B → C → D and back, swapping the pattern and its chord set at the bar line. A slot owns its own copy of the steps, so a hand-built pattern is as much a part of a song as a preset one.
+- While a slot is playing it *is* the live pattern, so an edit you make mid-song is written into that slot — which is what arranging feels like.
+
+### Fixed
+
+- **Song slots went dead after the first tap.** The strip is re-rendered on every change, so per-element listeners were being thrown away with the elements; it is one delegated handler now.
+- **The first slot played three bars instead of two** — the bar that starts when a slot begins was not counted as its first.
+
+### Notes
+
+- 128 browser checks, up from 122: capture, a second capture, arming the mode, starting on the first filled slot, advancing after the bar count, and returning to loop mode.
+
 ## 2.6.0 — 11 November 2026
 
 The beat leaves the browser.
