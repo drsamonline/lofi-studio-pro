@@ -49,6 +49,17 @@ That means there is nothing here to clear, and no sample library whose licence y
 
 The PolyForm Noncommercial License 1.0.0 in `LICENSE` is reproduced from the [PolyForm Project](https://polyformproject.org/licenses/noncommercial/1.0.0/), which publishes these licences for free reuse. It is unmodified apart from the `Required Notice` line, which names this project's copyright holder as the licence intends.
 
+## Sibling projects
+
+Parts of the 2.1.0 audio rebuild were learned from **[neonboom](https://github.com/drsamonline/neonboom)**, another browser beat workstation by the same author, whose engine had already solved several of the problems this app had:
+
+- the **glue compressor → limiter → master gain** ordering, and the idea of a master chain that is built once and reused;
+- **synthesising the reverb impulse from decaying noise** instead of waiting on an async `generate()` that can time out;
+- the **voice discipline** — every envelope opens from near-silence with a short ramp and closes by ramping to zero, never by being cut;
+- the **16-bit PCM WAV encoder** in `src/audio/wav.js`, which is the model for the recording format this app will move to.
+
+No code was copied between the repositories; the two engines are independent implementations of the same ideas. Credit is recorded here because the ideas were not invented here.
+
 ## Inspiration
 
 The interface owes an obvious debt to hardware drum machines and to the mobile step sequencers of the last few years — Teenage Engineering's OP-1 and OP-Z, Ableton Note, Korg's Gadget. No assets, layouts or code were taken from any of them; the resemblance is to a genre of instrument, not to a product.
