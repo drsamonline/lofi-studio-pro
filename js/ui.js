@@ -450,6 +450,22 @@
       var f = document.createElement('div');
       wrap.appendChild(f);
 
+      var pan = document.createElement('input');
+      pan.type = 'range';
+      pan.className = 'pan';
+      pan.min = '-100'; pan.max = '100'; pan.step = '5';
+      pan.value = String(LS.State.data.tracks[id].pan || 0);
+      pan.setAttribute('aria-label', m.label + ' pan');
+      pan.style.setProperty('--fill', ((LS.State.data.tracks[id].pan || 0) + 100) / 2 + '%');
+      pan.addEventListener('input', function () {
+        var v = parseInt(pan.value, 10);
+        LS.State.data.tracks[id].pan = v;
+        pan.style.setProperty('--fill', (v + 100) / 2 + '%');
+        LS.Audio.setTrackPan(id, v);
+        LS.State.saveSoon();
+      });
+      wrap.appendChild(pan);
+
       var tools = document.createElement('div');
       tools.className = 'strip-tools';
       tools.innerHTML =
@@ -648,6 +664,13 @@
 
   function paintTracks() {
     var S = LS.State.data;
+    document.querySelectorAll('#faders .strip').forEach(function (strip, idx) {
+      var id = LS.TRACK_IDS[idx];
+      var pan = strip.querySelector('.pan');
+      if (!pan || !id) return;
+      pan.value = String(S.tracks[id].pan || 0);
+      pan.style.setProperty('--fill', ((S.tracks[id].pan || 0) + 100) / 2 + '%');
+    });
     document.querySelectorAll('[data-mute],[data-solo]').forEach(function (b) {
       var id = b.dataset.mute || b.dataset.solo;
       var on = b.dataset.mute ? S.tracks[id].mute : S.tracks[id].solo;
@@ -676,7 +699,8 @@
 
   function paintSettings() {
     var S = LS.State.data;
-    [['setAutosave', 'autoSave'], ['setAutofill', 'autoFill'], ['setDebug', 'debug']].forEach(function (pair) {
+    [['setAutosave', 'autoSave'], ['setAutofill', 'autoFill'], ['setDebug', 'debug'],
+     ['setMetro', 'metro'], ['setCountIn', 'countIn']].forEach(function (pair) {
       var b = el[pair[0]];
       if (!b) return;
       b.setAttribute('aria-checked', S[pair[1]] ? 'true' : 'false');
@@ -813,6 +837,8 @@
         setAutosave: $('set-autosave'),
         setAutofill: $('set-autofill'),
         setDebug: $('set-debug'),
+        setMetro: $('set-metro'),
+        setCountIn: $('set-countin'),
         vizMode: $('set-viz'),
         storage: $('storage-info')
       };

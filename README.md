@@ -7,10 +7,10 @@
 [**▶ Open the app**](https://drsamonline.github.io/lofi-studio-pro/) · [Landing page](https://drsamonline.github.io/lofi-studio-pro/landing.html) · [Report a bug](https://github.com/drsamonline/lofi-studio-pro/issues)
 
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c6ef5)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.3.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.4.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%C2%B7%20offline-5a0fc8)](manifest.webmanifest)
 [![Tests](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml/badge.svg)](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml)
-[![100 browser checks](https://img.shields.io/badge/browser%20checks-100%20passing-2ea44f)](docs/TEST-REPORT.md)
+[![107 browser checks](https://img.shields.io/badge/browser%20checks-107%20passing-2ea44f)](docs/TEST-REPORT.md)
 [![Build](https://img.shields.io/badge/build-none%20required-informational)](.)
 [![No trackers](https://img.shields.io/badge/trackers-zero-brightgreen)](.)
 
@@ -36,7 +36,7 @@ It was built for the ninety seconds between two tasks: no login, no library, no 
 
 **Ten themes** — from a near-black studio to a paper-white daytime mode, all driven by CSS custom properties so the swap is instant.
 
-**Recording** — hit the record button to capture a take as a downloadable audio file.
+**Recording** — hit the record button to capture a take as a downloadable audio file, with an optional metronome and a one-bar count-in.
 
 **Presets and files** — name a beat and save it (up to 24), or export it as a `.json` and import it anywhere — by button, or by dropping the file on the window. A preset captures the beat and its sound, never your preferences.
 
@@ -73,6 +73,8 @@ Opening `index.html` straight from disk also works; only the service worker is s
 | Mute a track | — | Tap the track name (sequencer) or `M` (mixer) |
 | Solo a track | — | `S` in the mixer |
 | Tempo | — | `−` / `+`, or `TAP` four times |
+| Metronome / count-in | — | Settings |
+| Pan a track | — | Slider under the fader |
 | Surprise me | `S` | Settings → Roll |
 | Next theme | `B` | Themes tab |
 | Record a take | `R` | Record button in the top bar |
@@ -138,13 +140,15 @@ Signal path: six instrument channels → low-pass → tape → chorus → wow �
 
 Three decisions worth knowing:
 
+- **Nothing blocks the first paint.** Tone.js is fetched on the first gesture, not on load: 107 KB of script before you press play, 448 KB after. The service worker still precaches it, so offline is unchanged.
+
 - **Everything is validated at the edge.** `state.js` coerces and clamps every value on load, so a corrupted or half-written save can never reach the audio engine. A save from the old single-file build is migrated automatically.
 - **Nothing is locked behind a timer.** The transport is guarded by a promise, not a millisecond timeout — the previous version used a 180 ms lock and a 150 ms restart, which silently swallowed every restart.
 - **The shell ships with its own dependencies.** Tone.js is served from `vendor/`, not a CDN, so a blocked network cannot leave a drawn but silent app.
 
 ## Testing
 
-100 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, presets, export and import, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
+107 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, presets, export and import, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
 
 ```bash
 pip install websocket-client && python3 tests/run_browser_tests.py

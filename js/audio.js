@@ -39,6 +39,27 @@
   };
 
   var SR = 44100;
+  var tonePromise = null;
+
+  /* The audio library is 349 KB — three quarters of the whole payload — and
+     nothing needs it until the first gesture. It is fetched on demand and
+     served from the service-worker cache, so the first paint never waits. */
+  function loadTone() {
+    if (typeof Tone !== 'undefined') return Promise.resolve();
+    if (tonePromise) return tonePromise;
+    tonePromise = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = './vendor/tone.min.js';
+      s.async = true;
+      s.onload = function () { resolve(); };
+      s.onerror = function () {
+        tonePromise = null;
+        reject(new Error('Tone.js could not be loaded'));
+      };
+      document.head.appendChild(s);
+    });
+    return tonePromise;
+  }
 
   function db(pct) {
     if (pct <= 0) return -Infinity;
@@ -83,7 +104,9 @@
     A.limiter = new Tone.Limiter(-1);
     A.comp = new Tone.Compressor({ threshold: -8, knee: 8, ratio: 2, attack: 0.008, release: 0.25 });
     A.mixBus = new Tone.Gain(3.6);
-    A.analyser = new Tone.Analyser(S.viz === 'wave' ? 'waveform' : 'fft', S.viz === 'wave' ? 512 : 96);
+    /* Analyser size must be a power of two: Tone doubles it for fftSize, and
+       an fftSize of 192 is an IndexSizeError that takes the whole engine down. */
+    A.analyser = new Tone.Analyser(S.viz === 'wave' ? 'waveform' : 'fft', S.viz === 'wave' ? 512 : 128);
 
     A.mixBus.chain(A.comp, A.limiter, A.fader, A.master, A.analyser, Tone.Destination);
 
@@ -109,6 +132,7 @@
 
     buildInstruments();
     buildCrackle();
+    buildMetronome();
 
     A.ready = true;
     return true;
@@ -186,6 +210,24 @@
     A.inst.melody.volume.value = -11;
   }
 
+  /* A metronome is one oscillator and a 2 ms ramp. It is armed on the same
+     transport as the beat, so it can never drift. */
+  function buildMetronome() {
+    A.click = new Tone.Synth({
+      oscillator: { type: 'square' },
+      envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.01 }
+    }).connect(A.mixBus);
+    A.click.volume.value = -14;
+    A.metroId = Tone.Transport.scheduleRepeat(function (time) {
+      /* clicks also cover a count-in bar even when the metronome is off,
+         otherwise the count-in is a silent bar of nothing */
+      if (!LS.State.data.metro && !A.countingIn) return;
+      var pos = Tone.Transport.position.split(':');
+      var beat = parseInt(pos[1], 10) || 0;
+      A.click.triggerAttackRelease(beat === 0 ? 'C6' : 'G5', '32n', time, beat === 0 ? 1 : 0.6);
+    }, '4n');
+  }
+
   function buildCrackle() {
     var S = LS.State.data;
 
@@ -217,7 +259,7 @@
     if (A.building) return A.building;
     A.building = (async function () {
       try {
-        if (typeof Tone === 'undefined') throw new Error('Tone.js missing');
+        await loadTone();
         /* a slightly longer look-ahead than the 100 ms default: this app
            schedules a lot of short notes and a bigger buffer is the cheapest
            insurance against dropouts on a slow phone. */
@@ -252,6 +294,7 @@
     A.fx.wow.wet.value = v / 100;
   }
   function setTrackVol(id, v) { if (A.ready && A.ch[id]) A.ch[id].volume.value = db(v); }
+  function setTrackPan(id, v) { if (A.ready && A.ch[id]) A.ch[id].pan.value = Math.max(-1, Math.min(1, v / 100)); }
   function setTrackMute(id, m) { if (A.ready && A.ch[id]) A.ch[id].mute = m; }
   function setTrackSolo(id, s) { if (A.ready && A.ch[id]) A.ch[id].solo = s; }
   function setViz(type) { if (A.ready && A.analyser) A.analyser.type = type === 'wave' ? 'waveform' : 'fft'; }
@@ -267,19 +310,23 @@
     setWow(S.fx.wow);
     LS.TRACK_IDS.forEach(function (t) {
       setTrackVol(t, S.tracks[t].vol);
+      setTrackPan(t, S.tracks[t].pan);
       setTrackMute(t, S.tracks[t].mute);
       setTrackSolo(t, S.tracks[t].solo);
     });
   }
 
   /* ------------------------------------------------------------ transport */
-  function scheduleSequence() {
+  function scheduleSequence(countIn) {
     clearSequence();
     A.step = -1;
     A.bar = -1;
+    var startAt = countIn ? '+1m' : 0;
+    A.countingIn = !!countIn;
     A.seqId = Tone.Transport.scheduleRepeat(function (time) {
       var i = (A.step + 1) % LS.STEP_COUNT;
       A.step = i;
+      if (i === 0) A.countingIn = false;
       if (i === 0) A.bar = (A.bar + 1) % 4;
 
       var at = time;
@@ -293,10 +340,11 @@
       Tone.Draw.schedule(function () {
         if (LS.UI && LS.UI.highlight) LS.UI.highlight(i);
       }, time);
-    }, '16n');
+    }, '16n', startAt);
   }
 
   function clearSequence() {
+    if (typeof Tone === 'undefined') return;
     if (A.seqId !== null && A.seqId !== undefined) {
       Tone.Transport.clear(A.seqId);
       A.seqId = null;
@@ -380,12 +428,14 @@
   }
 
   function startTransport() {
+    if (typeof Tone === 'undefined') return;
     Tone.Transport.bpm.value = LS.State.data.bpm;
     fadeIn();
     if (Tone.Transport.state !== 'started') Tone.Transport.start();
     A.transportStarted = true;
   }
   function stopTransport() {
+    if (typeof Tone === 'undefined') return;
     Tone.Transport.stop();
     A.transportStarted = false;
   }
@@ -607,6 +657,7 @@
 
   LS.Audio = {
     ensure: ensure,
+    loadTone: loadTone,
     get ready() { return A.ready; },
     get analyser() { return A.analyser; },
     get transportStarted() { return A.transportStarted; },
@@ -619,6 +670,7 @@
     setChorus: setChorus,
     setWow: setWow,
     setTrackVol: setTrackVol,
+    setTrackPan: setTrackPan,
     setTrackMute: setTrackMute,
     setTrackSolo: setTrackSolo,
     setViz: setViz,

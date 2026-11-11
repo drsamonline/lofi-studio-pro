@@ -1,6 +1,6 @@
 # Roadmap
 
-**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
+**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. **Shipped in 2.4.0:** deferred audio library, metronome, count-in, per-track pan. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
 
 What to add next, ordered by value per line of code. Each item carries an effort estimate and a bloat cost, because the constraint that matters for this app is not features — it is that it stays one screen that loads instantly.
 
@@ -41,7 +41,7 @@ The first load is already small (≈120 KB of app code plus a 349 KB audio libra
 
 | # | Idea | Why it matters | Effort | Bloat |
 | --- | --- | --- | --- | --- |
-| 15 | **Load Tone.js on first interaction, not on load** | 349 KB is 75 % of the payload and nothing needs it until the first tap. Boot to interactive would drop to a few hundred milliseconds on a slow phone | M | ~20 lines, one trade-off |
+| 15 | ✅ 2.4.0 **Load Tone.js on first interaction, not on load** | 349 KB is 75 % of the payload and nothing needs it until the first tap. Boot to interactive would drop to a few hundred milliseconds on a slow phone | M | ~20 lines, one trade-off |
 | 16 | **Precompute the swing offset per tempo** | `Tone.Time('16n').toSeconds()` currently runs on every swung step; cache it when the tempo changes | S | ~5 lines |
 | 17 | **`content-visibility: auto` on the hidden views** | Four of five views are inert but still cost layout on repaint | S | 2 lines of CSS |
 | 18 | **Minify and precompress the shell** | ~90 KB of app code becomes ~40 KB; a `make release` script, not a build system | S | a script, no runtime cost |

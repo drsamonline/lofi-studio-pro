@@ -72,7 +72,7 @@
     busy = true;
     try {
       await A.ensure();
-      A.scheduleSequence();
+      A.scheduleSequence(!!S.data.countIn);
       A.startTransport();
       setPlaying(true);
     } catch (e) {
@@ -503,6 +503,16 @@
       $('btn-fill').classList.toggle('on', S.data.autoFill);
       S.saveSoon();
     });
+    $('set-metro').addEventListener('click', function () {
+      S.data.metro = !S.data.metro;
+      UI.paintSettings();
+      S.saveSoon();
+    });
+    $('set-countin').addEventListener('click', function () {
+      S.data.countIn = !S.data.countIn;
+      UI.paintSettings();
+      S.saveSoon();
+    });
     $('set-debug').addEventListener('click', function () {
       S.data.debug = !S.data.debug;
       UI.paintSettings();
@@ -720,9 +730,7 @@
     if (loaded.migrated) {
       UI.toast('Your old pattern was carried over', 'success');
     }
-    if (typeof Tone === 'undefined') {
-      UI.toast('Audio engine missing — check vendor/tone.min.js', 'error');
-    }
+    /* Tone.js is fetched on the first gesture, so its absence here is normal. */
     console.log('[Lofi] ready · ' + LS.TRACK_IDS.length + ' tracks · ' + LS.PATTERN_ORDER.length + ' patterns');
   }
 

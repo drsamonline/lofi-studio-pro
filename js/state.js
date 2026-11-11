@@ -27,7 +27,7 @@
   function defaults() {
     var steps = {}, tracks = {}, amb = {};
     LS.TRACK_IDS.forEach(function (t) { steps[t] = LS.PATTERNS.chillhop.steps[t].slice(); });
-    LS.TRACK_IDS.forEach(function (t) { tracks[t] = { vol: 80, mute: false, solo: false }; });
+    LS.TRACK_IDS.forEach(function (t) { tracks[t] = { vol: 80, pan: 0, mute: false, solo: false }; });
     LS.AMBIENCE_IDS.forEach(function (a) { amb[a] = { on: false, vol: 50 }; });
     return {
       v: 2,
@@ -46,7 +46,9 @@
       autoFill: false,
       autoSave: true,
       debug: false,
-      sleep: 0
+      sleep: 0,
+      metro: false,
+      countIn: false
     };
   }
 
@@ -68,6 +70,8 @@
     d.autoSave = bool(s.autoSave, d.autoSave);
     d.debug = bool(s.debug, d.debug);
     d.sleep = [0, 15, 30, 60, 90].indexOf(s.sleep) > -1 ? s.sleep : 0;
+    d.metro = bool(s.metro, false);
+    d.countIn = bool(s.countIn, false);
 
     var fx = obj(s.fx);
     d.fx.filter = Math.round(num(fx.filter, 400, 12000, d.fx.filter));
@@ -93,6 +97,7 @@
     LS.TRACK_IDS.forEach(function (t) {
       var r = obj(tr[t]);
       d.tracks[t].vol = Math.round(num(r.vol, 0, 100, d.tracks[t].vol));
+      d.tracks[t].pan = Math.round(num(r.pan, -100, 100, 0));
       d.tracks[t].mute = bool(r.mute, false);
       d.tracks[t].solo = bool(r.solo, false);
     });

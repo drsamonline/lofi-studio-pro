@@ -322,6 +322,12 @@ button { font: inherit; color: inherit; }
   color: var(--c);
 }
 .strip-tools { display: flex; gap: 3px; }
+.strip .pan {
+  width: 100%; max-width: 74px; height: 18px;
+  margin: 0;
+}
+.strip .pan::-webkit-slider-runnable-track { height: 4px; }
+.strip .pan::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -4.5px; }
 
 .fader {
   width: 34px; height: 116px;

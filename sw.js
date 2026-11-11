@@ -5,7 +5,7 @@
    fully offline after one visit and removes the single point of failure the
    previous CDN build had. Bump VERSION to publish new assets.
    ========================================================================== */
-const VERSION = 'lofi-2.3.0';
+const VERSION = 'lofi-2.4.0';
 const SHELL = [
   './',
   './index.html',

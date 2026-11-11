@@ -1,6 +1,6 @@
 {
   "name": "lofi-studio-pro",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "private": true,
   "description": "A lofi beat machine that runs entirely in the browser. Six tracks, nine ambience layers, live tape chain, offline-first PWA.",
   "homepage": "https://drsamonline.github.io/lofi-studio-pro/",

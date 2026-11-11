@@ -156,3 +156,12 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | `savePreset()` / `loadPreset()` / `deletePreset()` | main | UI side, with toasts | ✓ |
 | `exportFile()` / `importFile(file)` | main | Blob download and FileReader import | ◐ |
 | `applySnapshot()` / `syncAmbience()` | main | Pushes a loaded beat into the audio engine and the UI, including which ambience layers should be running | ✓ |
+
+## Added in 2.4.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `loadTone()` | audio | Injects `vendor/tone.min.js` on demand and memoises the promise | ✓ |
+| `buildMetronome()` | audio | The click, scheduled on the transport at quarter notes | ✓ |
+| `setTrackPan(id, v)` | audio | −100…100 into the channel panner | ✓ |
+| `scheduleSequence(countIn)` | audio | Starts the beat a bar late when a count-in is armed | ✓ |

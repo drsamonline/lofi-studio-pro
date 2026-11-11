@@ -2,6 +2,30 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.4.0 — 11 November 2026
+
+Speed, and the last of the small musical gaps.
+
+### Changed
+
+- **The audio library no longer blocks the first paint.** Tone.js is 341 KB — three quarters of the JavaScript — and nothing needs it until the first gesture. The script tag is gone; it is fetched on demand, from the service-worker cache, and the page is fully drawn before it arrives.
+
+  Measured on a cold load: **107 KB of script at first paint, 448 KB after the first play.** The deferred file is still precached in the background, so offline behaviour is unchanged.
+
+### Added
+
+- **Metronome** — a click on every beat, accented on the first of the bar, scheduled on the same transport as the beat so it can never drift.
+- **Count-in** — one bar of clicks before the beat starts. The clicks play during the count-in even with the metronome switched off, because a silent count-in is a bar of nothing.
+- **Per-track pan** — a small slider under each fader in the mixer.
+
+### Fixed
+
+- **The spectrum visualiser killed the audio engine on reload.** The analyser was created with a size of 96, and `AnalyserNode.fftSize` must be a power of two — so anyone who switched to the spectrum view and came back later got an `IndexSizeError` and a silent app. It is 128 now. Found by the new deferred-loading test, which reloads with the spectrum view saved.
+
+### Notes
+
+- 107 browser checks, up from 100: deferred loading (before and after the first gesture), metronome, count-in timing, per-track pan.
+
 ## 2.3.0 — 11 November 2026
 
 The app now keeps what you make.
