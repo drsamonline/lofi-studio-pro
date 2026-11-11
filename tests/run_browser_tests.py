@@ -352,9 +352,16 @@ js("LS.App.stop(); LS.App.setBpm(120)"); drain(0.3)
 js("document.getElementById('btn-play').click()"); drain(1.0)
 check("song: playback starts on the first filled slot",
       js("LS.Audio.position().slot") == 0, js("LS.Audio.position().slot"))
-drain(7.5)   # two bars at 120bpm = 4s, plus the start of the next slot
-check("song: the song advances to the next slot after its bars",
-      js("LS.Audio.position().slot") == 1, js("JSON.stringify(LS.Audio.position())"))
+# Wait for the state, not for the wall clock: a headless runner with no audio
+# device can run the Web Audio clock slower than real time.
+slot_now = 0
+for _ in range(40):
+    drain(1.0)
+    slot_now = js("LS.Audio.position().slot")
+    if slot_now == 1:
+        break
+check("song: the song advances to the next slot after its bars", slot_now == 1,
+      js("JSON.stringify(LS.Audio.position())"))
 js("LS.App.stop(); document.getElementById('btn-song').click()"); drain(0.6)
 check("song: turning it off returns to loop mode", js("LS.State.data.song.on") is False)
 
