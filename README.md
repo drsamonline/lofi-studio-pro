@@ -7,10 +7,10 @@
 [**▶ Open the app**](https://drsamonline.github.io/lofi-studio-pro/) · [Landing page](https://drsamonline.github.io/lofi-studio-pro/landing.html) · [Report a bug](https://github.com/drsamonline/lofi-studio-pro/issues)
 
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c6ef5)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.1.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%C2%B7%20offline-5a0fc8)](manifest.webmanifest)
 [![Tests](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml/badge.svg)](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml)
-[![75 browser checks](https://img.shields.io/badge/browser%20checks-75%20passing-2ea44f)](docs/TEST-REPORT.md)
+[![88 browser checks](https://img.shields.io/badge/browser%20checks-88%20passing-2ea44f)](docs/TEST-REPORT.md)
 [![Build](https://img.shields.io/badge/build-none%20required-informational)](.)
 [![No trackers](https://img.shields.io/badge/trackers-zero-brightgreen)](.)
 
@@ -28,7 +28,7 @@ It was built for the ninety seconds between two tasks: no login, no library, no 
 
 ## Features
 
-**Sequencer** — six tracks (kick, snare, hat, bass, keys, melody) across sixteen steps, with ten ready patterns, twelve four-bar chord progressions, swing from straight to lazy, and an optional snare fill every fourth bar. Tap a track name to mute it; the mixer has per-track faders and solo.
+**Sequencer** — six tracks (kick, snare, hat, bass, keys, melody) across sixteen steps, with ten ready patterns, twelve four-bar chord progressions, swing from straight to lazy, and an optional snare fill every fourth bar. Tap a pad to switch it on, **hold it** to cycle normal → accent → ghost. Tap a track name to mute it; the mixer has per-track faders and solo.
 
 **Tape chain** — low-pass filter, tape saturation, vinyl crackle, reverb, chorus and wow-and-flutter, all live while the beat runs.
 
@@ -65,6 +65,7 @@ Opening `index.html` straight from disk also works; only the service worker is s
 | --- | --- | --- |
 | Play / stop | `Space` | Play button |
 | Move around the sequencer | Arrow keys | Tap a pad |
+| Accent / ghost a step | — | Hold a pad |
 | Mute a track | — | Tap the track name (sequencer) or `M` (mixer) |
 | Solo a track | — | `S` in the mixer |
 | Tempo | — | `−` / `+`, or `TAP` four times |
@@ -72,8 +73,29 @@ Opening `index.html` straight from disk also works; only the service worker is s
 | Next theme | `B` | Themes tab |
 | Record a take | `R` | Record button in the top bar |
 | Stop everything | `X` | Panic button |
+| Share the beat | — | Settings → Copy link |
 
 Knobs and faders accept a drag, a scroll wheel, and arrow keys. Double-click a knob to reset it. Hold `Shift` while dragging for fine adjustment.
+
+## What it sounds like, and why
+
+The 2.0 engine sounded like noise because it mostly *was* noise: a bare white-noise snare, a white-noise hi-hat through a high-pass, a kick three times louder than everything else, and a reverb wired as an insert — which meant the dry signal never reached the output at all. On top of that, the bass and melody were monophonic and cut their own release on every consecutive sixteenth.
+
+2.1 rebuilds the voice design and the gain staging. Measured on the same four seconds of the same pattern:
+
+| | 2.0.0 | 2.1.0 |
+| --- | --- | --- |
+| Peak | 0.68 | 0.54 (no clipping) |
+| Crest factor | 7.9 | 6.9 |
+| Snare | white noise burst | tuned body + band-limited crack |
+| Hi-hat | broadband hiss | band-passed tick with a bell |
+| Reverb | insert — dry signal lost | parallel send |
+| Bass / melody | monophonic, self-cutting | polyphonic |
+| Master | limiter only | 2:1 glue compressor → limiter → DC block → fades |
+
+<img src="docs/audio-before-after.png" alt="Waveform and spectrum before and after the audio rebuild">
+
+The figure is generated from real captures of the running app, not from a mock: the top two traces are the same pattern's output, and the bottom is the spectrum of the same window. The 2.0 trace never returns to silence between hits; the 2.1 trace does.
 
 ## Screenshots
 
@@ -114,13 +136,13 @@ Three decisions worth knowing:
 
 ## Testing
 
-75 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
+88 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
 
 ```bash
 pip install websocket-client && python3 tests/run_browser_tests.py
 ```
 
-Results: **[docs/TEST-REPORT.md](docs/TEST-REPORT.md)** — 75 passing, 0 failing.
+Results: **[docs/TEST-REPORT.md](docs/TEST-REPORT.md)** — 88 passing, 0 failing.
 
 ## Native builds
 
@@ -136,7 +158,7 @@ The APK is a debug build, signed with the default debug key, so it installs from
 
 ## Roadmap
 
-The next round of ideas — features, offline behaviour, performance, and a short list of things deliberately left out — is in **[ROADMAP.md](ROADMAP.md)**. Every feature in this version is catalogued in **[docs/FUNCTIONS.md](docs/FUNCTIONS.md)**.
+The next round of ideas — features, offline behaviour, performance, and a short list of things deliberately left out — is in **[ROADMAP.md](ROADMAP.md)**. The first eight are already shipped in 2.1.0 and marked as such. Every feature in this version is catalogued in **[docs/FUNCTIONS.md](docs/FUNCTIONS.md)**.
 
 ## Licence
 

@@ -1,5 +1,7 @@
 # Roadmap
 
+**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
+
 What to add next, ordered by value per line of code. Each item carries an effort estimate and a bloat cost, because the constraint that matters for this app is not features — it is that it stays one screen that loads instantly.
 
 **Effort:** S ≈ under an hour · M ≈ an afternoon · L ≈ a weekend.
@@ -11,13 +13,13 @@ What to add next, ordered by value per line of code. Each item carries an effort
 
 | # | Idea | Why it matters | Effort | Bloat |
 | --- | --- | --- | --- | --- |
-| 1 | **Wake lock** (`navigator.wakeLock`) while playing | The phone screen sleeping mid-beat is the single most annoying thing about using this on a phone | S | ~10 lines |
-| 2 | **Sleep timer** ("stop in 30 / 60 min") in Settings | The Sleep preset exists but nothing stops it; without this the app cannot do the job it advertises | S | one row |
-| 3 | **Media Session controls** | Play/pause and title on the lock screen and headphone buttons — makes it feel like a player instead of a web page | S | ~15 lines |
-| 4 | **Share a pattern by URL** | `#p=boombap&v=nostalgic&bpm=84&s=1010…` — send a beat to a friend, and make every pattern in the roadmap shareable | M | ~60 lines, no UI |
-| 5 | **Per-step velocity** (long-press a pad to cycle accent / normal / ghost) | The difference between a drum machine and a drum machine that grooves. Six tracks of on/off is why patterns sound stiff | M | 3 states per step, one gesture |
-| 6 | **Fade in / out over 40 ms** on play and stop | Kills the click at the start of every take and in every recording | S | ~8 lines |
-| 7 | **Update prompt** when the service worker finds a new version | Right now a new deploy only reaches people who navigate with a connection; an installed PWA can sit on an old shell for weeks | S | one toast |
+| 1 | ✅ 2.1.0 **Wake lock** (`navigator.wakeLock`) while playing | The phone screen sleeping mid-beat is the single most annoying thing about using this on a phone | S | ~10 lines |
+| 2 | ✅ 2.1.0 **Sleep timer** ("stop in 30 / 60 min") in Settings | The Sleep preset exists but nothing stops it; without this the app cannot do the job it advertises | S | one row |
+| 3 | ✅ 2.1.0 **Media Session controls** | Play/pause and title on the lock screen and headphone buttons — makes it feel like a player instead of a web page | S | ~15 lines |
+| 4 | ✅ 2.1.0 **Share a pattern by URL** | `#p=boombap&v=nostalgic&bpm=84&s=1010…` — send a beat to a friend, and make every pattern in the roadmap shareable | M | ~60 lines, no UI |
+| 5 | ✅ 2.1.0 **Per-step velocity** (long-press a pad to cycle accent / normal / ghost) | The difference between a drum machine and a drum machine that grooves. Six tracks of on/off is why patterns sound stiff | M | 3 states per step, one gesture |
+| 6 | ✅ 2.1.0 **Fade in / out over 40 ms** on play and stop | Kills the click at the start of every take and in every recording | S | ~8 lines |
+| 7 | ✅ 2.1.0 **Update prompt** when the service worker finds a new version | Right now a new deploy only reaches people who navigate with a connection; an installed PWA can sit on an old shell for weeks | S | one toast |
 | 8 | **Named user presets** (save / load / delete) | Six built-in activities are not enough once someone finds their sound | M | one screen section, ~80 lines |
 
 ## Next — offline and robustness
@@ -26,7 +28,7 @@ The app already works fully offline, including its audio library. What is left i
 
 | # | Idea | Why it matters | Effort | Bloat |
 | --- | --- | --- | --- | --- |
-| 9 | **iOS install instructions sheet** | `beforeinstallprompt` never fires on iOS, so the install button simply does not exist there. A one-time "Share → Add to Home Screen" hint recovers the whole iPhone audience | S | one dismissible sheet |
+| 9 | ✅ 2.1.0 **iOS install instructions sheet** | `beforeinstallprompt` never fires on iOS, so the install button simply does not exist there. A one-time "Share → Add to Home Screen" hint recovers the whole iPhone audience | S | one dismissible sheet |
 | 10 | **Cache budget and eviction** | The shell is ~600 KB and grows with screenshots; cap it and prune old entries so an installed app never eats a phone's quota | S | ~20 lines in `sw.js` |
 | 11 | **Save takes to a folder** (File System Access API, where available) | Turns "download" into "it appears in my Lofi folder" — the difference between a demo and a tool | M | ~50 lines, progressive |
 | 12 | **Export the pattern as a file** (`.lofi.json`) | Backup, share, and a migration path that does not depend on `localStorage` surviving a browser clean-up | S | ~30 lines |

@@ -154,6 +154,14 @@
             <button id="btn-surprise" class="btn btn-sm btn-primary" type="button">Roll</button>
           </div>
           <div class="row">
+            <div class="row-text"><strong>Sleep timer</strong><span>Stop the beat after a while</span></div>
+            <button id="set-sleep" class="btn btn-sm" type="button">Off</button>
+          </div>
+          <div class="row">
+            <div class="row-text"><strong>Share this beat</strong><span>Copy a link that rebuilds the pattern</span></div>
+            <button id="btn-share" class="btn btn-sm" type="button">Copy link</button>
+          </div>
+          <div class="row">
             <div class="row-text"><strong>Reset everything</strong><span>Clears the pattern and every setting</span></div>
             <button id="btn-reset" class="btn btn-sm btn-danger" type="button">Reset</button>
           </div>
@@ -168,9 +176,9 @@
         </p>
         <p class="about" style="margin-top:8px">
           Shortcuts: <b>Space</b> play · <b>S</b> surprise · <b>B</b> theme · <b>R</b> record · <b>X</b> stop all.
-          Arrow keys move around the sequencer.
+          Arrow keys move around the sequencer. <b>Hold a pad</b> to cycle normal → accent → ghost.
         </p>
-        <p class="about" style="margin-top:8px">Build 2.0.0</p>
+        <p class="about" style="margin-top:8px">Build 2.1.0</p>
       </div>
     </section>
   </main>
@@ -229,6 +237,14 @@
     </button>
   </nav>
 
+</div>
+
+<div id="ios-tip" class="sheet" hidden>
+  <div class="sheet-card">
+    <h3>Add Lofi Studio to your home screen</h3>
+    <p>Tap <b>Share</b> in Safari, then <b>Add to Home Screen</b>. It opens full screen and works with no connection.</p>
+    <button class="btn btn-primary btn-block" type="button">Got it</button>
+  </div>
 </div>
 
 <div id="toasts" aria-live="polite" aria-atomic="false"></div>

@@ -41,7 +41,8 @@
       viz: 'wave',
       autoFill: false,
       autoSave: true,
-      debug: false
+      debug: false,
+      sleep: 0
     };
   }
 
@@ -62,6 +63,7 @@
     d.autoFill = bool(s.autoFill, d.autoFill);
     d.autoSave = bool(s.autoSave, d.autoSave);
     d.debug = bool(s.debug, d.debug);
+    d.sleep = [0, 15, 30, 60, 90].indexOf(s.sleep) > -1 ? s.sleep : 0;
 
     var fx = obj(s.fx);
     d.fx.filter = Math.round(num(fx.filter, 400, 12000, d.fx.filter));
@@ -75,7 +77,11 @@
     LS.TRACK_IDS.forEach(function (t) {
       var row = st[t];
       if (Array.isArray(row) && row.length === LS.STEP_COUNT) {
-        d.steps[t] = row.map(function (x) { return x ? 1 : 0; });
+        d.steps[t] = row.map(function (x) {
+          var n = parseInt(x, 10);
+          if (!isFinite(n)) return 0;
+          return Math.min(3, Math.max(0, n));
+        });
       }
     });
 
@@ -205,6 +211,33 @@
     onChange: function (fn) { State.listeners.push(fn); },
     emit: function (what) {
       State.listeners.forEach(function (fn) { try { fn(what); } catch (e) { console.warn(e); } });
+    },
+
+    /* ---------------------------------------------------------- sharing
+       A pattern is 6 tracks x 16 steps of 2 bits = 48 hex characters, so a
+       whole beat fits comfortably in a URL. */
+    encode: function () {
+      var d = State.data;
+      var out = '';
+      LS.TRACK_IDS.forEach(function (t) {
+        var bits = 0;
+        for (var i = 0; i < LS.STEP_COUNT; i++) bits = (bits << 2) | (d.steps[t][i] & 3);
+        out += ('0000000' + (bits >>> 0).toString(16)).slice(-8);
+      });
+      return out;
+    },
+
+    decode: function (hex) {
+      if (!hex || hex.length < 48 || /[^0-9a-f]/i.test(hex)) return null;
+      var steps = {};
+      for (var t = 0; t < LS.TRACK_IDS.length; t++) {
+        var chunk = hex.substr(t * 8, 8);
+        var bits = parseInt(chunk, 16) >>> 0;
+        var row = [];
+        for (var i = LS.STEP_COUNT - 1; i >= 0; i--) { row[i] = (bits >>> ((LS.STEP_COUNT - 1 - i) * 2)) & 3; }
+        steps[LS.TRACK_IDS[t]] = row;
+      }
+      return steps;
     },
 
     /* Narrow accessors used by the UI and the audio engine. */

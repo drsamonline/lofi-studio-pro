@@ -23,6 +23,48 @@
   function setPlaying(v) {
     playing = v;
     UI.paintTransport(v);
+    if (v) { keepAwake(); mediaSession('playing'); }
+    else { releaseAwake(); mediaSession('paused'); }
+  }
+
+  /* ---------------------------------------------------------- keep awake
+     A phone that sleeps mid-beat is the most annoying thing about using this
+     on a phone. The lock is released by the browser when the tab is hidden,
+     so it is re-requested on the way back. */
+  var wakeLock = null;
+  async function keepAwake() {
+    try {
+      if (!('wakeLock' in navigator) || wakeLock) return;
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', function () { wakeLock = null; });
+    } catch (e) { wakeLock = null; }
+  }
+  function releaseAwake() {
+    if (!wakeLock) return;
+    try { wakeLock.release(); } catch (e) {}
+    wakeLock = null;
+  }
+
+  /* -------------------------------------------------------- media session
+     Play/pause and a title on the lock screen and on headphone buttons. */
+  function mediaSession(state) {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      if (state === 'playing') {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: LS.PATTERNS[S.data.patternId || 'chillhop'] ? (S.data.patternId ? LS.PATTERNS[S.data.patternId].name : 'Custom') : 'Lofi Studio',
+          artist: LS.VIBES[S.data.vibe].name + ' · ' + S.data.bpm + ' BPM',
+          album: 'Lofi Studio Pro',
+          artwork: [
+            { src: './icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: './icons/icon-512.png', sizes: '512x512', type: 'image/png' }
+          ]
+        });
+        navigator.mediaSession.playbackState = 'playing';
+      } else {
+        navigator.mediaSession.playbackState = 'paused';
+      }
+    } catch (e) {}
   }
 
   async function play() {
@@ -48,7 +90,7 @@
     setPlaying(false);
     /* Ambience layers are driven by the transport, so it keeps running while
        any of them is on; stopping it would silence the rain too. */
-    if (A.ambienceCount() === 0) A.stopTransport();
+    if (A.ambienceCount() === 0) A.fadeOut(function () { A.stopTransport(); });
   }
 
   function toggle() { return playing ? stop() : play(); }
@@ -195,6 +237,34 @@
     if (!playing) play();
   }
 
+  /* ------------------------------------------------------------ sleep timer
+     The Sleep preset exists but nothing stopped it; this is the other half. */
+  var sleepTimer = null;
+  var SLEEP_STEPS = [0, 15, 30, 60, 90];
+  function cycleSleepTimer() {
+    var btn = $('set-sleep');
+    var idx = SLEEP_STEPS.indexOf(S.data.sleep || 0);
+    if (idx < 0) idx = 0;
+    var next = SLEEP_STEPS[(idx + 1) % SLEEP_STEPS.length];
+    S.data.sleep = next;
+    clearTimeout(sleepTimer);
+    sleepTimer = null;
+    if (next === 0) {
+      btn.textContent = 'Off';
+      UI.toast('Sleep timer off', 'info');
+    } else {
+      btn.textContent = next + ' min';
+      sleepTimer = setTimeout(function () {
+        stop();
+        S.data.sleep = 0;
+        btn.textContent = 'Off';
+        UI.toast('Sleep timer — stopping', 'info');
+      }, next * 60000);
+      UI.toast('Stopping in ' + next + ' minutes', 'success');
+    }
+    S.saveSoon();
+  }
+
   /* --------------------------------------------------------------- recording */
   async function toggleRecord() {
     if (!recording) {
@@ -246,6 +316,36 @@
     }
   }
 
+  /* ----------------------------------------------------------------- share */
+  function shareLink() {
+    var url = location.origin + location.pathname +
+      '?s=' + S.encode() + '&b=' + S.data.bpm + '&v=' + S.data.vibe;
+    if (navigator.share) {
+      navigator.share({ title: 'A lofi beat', url: url }).catch(function () { copy(url); });
+    } else {
+      copy(url);
+    }
+  }
+  function copy(text) {
+    var done = function () { UI.toast('Link copied', 'success'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); UI.toast('Link copied', 'success'); }
+    catch (e) { UI.toast('Could not copy — long-press the address bar', 'warn'); }
+    ta.remove();
+  }
+
   /* ------------------------------------------------------------------ reset */
   function reset() {
     stop();
@@ -270,6 +370,9 @@
     $('btn-bpm-up').addEventListener('click', function () { nudgeBpm(1); });
     $('btn-tap').addEventListener('click', tapTempo);
     $('btn-surprise').addEventListener('click', surprise);
+    $('btn-share').addEventListener('click', shareLink);
+    $('set-sleep').addEventListener('click', cycleSleepTimer);
+    $('set-sleep').textContent = (S.data.sleep ? S.data.sleep + ' min' : 'Off');
     $('btn-reset').addEventListener('click', function () {
       if (confirm('Reset every setting, pattern and volume to the defaults?')) reset();
     });
@@ -362,6 +465,14 @@
       }
     });
 
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler('play', function () { if (!playing) play(); });
+        navigator.mediaSession.setActionHandler('pause', function () { if (playing) stop(); });
+        navigator.mediaSession.setActionHandler('stop', function () { panic(); });
+      } catch (e) {}
+    }
+
     var rt = null;
     window.addEventListener('resize', function () {
       clearTimeout(rt);
@@ -369,6 +480,7 @@
     });
     document.addEventListener('visibilitychange', function () {
       LS.Viz.pause(document.hidden);
+      if (!document.hidden && playing) keepAwake();
     });
   }
 
@@ -394,10 +506,44 @@
 
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js').catch(function (err) {
+        navigator.serviceWorker.register('./sw.js').then(function (reg) {
+          reg.addEventListener('updatefound', function () {
+            var sw = reg.installing;
+            if (!sw) return;
+            sw.addEventListener('statechange', function () {
+              if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                UI.toast('A new version is ready', 'info', {
+                  label: 'Reload',
+                  fn: function () { location.reload(); }
+                });
+              }
+            });
+          });
+        }).catch(function (err) {
           console.warn('[Lofi] Service worker not registered', err);
         });
       });
+    }
+
+    /* iOS never fires beforeinstallprompt, so the install button simply does
+       not exist there. One sheet, once, is the whole fix. */
+    var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var standalone = window.navigator.standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches;
+    var told = false;
+    try { told = localStorage.getItem('lofi-ios-tip') === '1'; } catch (e) {}
+    if (isIos && !standalone && !told) {
+      setTimeout(function () {
+        var sheet = $('ios-tip');
+        if (!sheet) return;
+        sheet.hidden = false;
+        var close = function () {
+          sheet.hidden = true;
+          try { localStorage.setItem('lofi-ios-tip', '1'); } catch (e) {}
+        };
+        sheet.querySelector('button').addEventListener('click', close);
+        sheet.addEventListener('click', function (e) { if (e.target === sheet) close(); });
+      }, 2500);
     }
   }
 
@@ -428,6 +574,29 @@
     if (deep && LS.PRESETS[deep[1]]) {
       applyPreset(deep[1], false);
       UI.toast('Loaded the ' + LS.PRESETS[deep[1]].name + ' preset — press play', 'info');
+    }
+
+    /* A shared beat: ?s=<48 hex>&b=<bpm>&v=<vibe> */
+    var shared = /[?&]s=([0-9a-f]{48})/i.exec(location.search);
+    if (shared) {
+      var steps = S.decode(shared[1]);
+      if (steps) {
+        LS.TRACK_IDS.forEach(function (t) { S.data.steps[t] = steps[t]; });
+        S.data.patternId = null;
+        S.data.preset = null;
+        var b = /[?&]b=(\d{2,3})/.exec(location.search);
+        var vb = /[?&]v=([a-z]+)/.exec(location.search);
+        if (b) setBpm(parseInt(b[1], 10));
+        if (vb && LS.VIBES[vb[1]]) S.data.vibe = vb[1];
+        UI.paintSequencer();
+        UI.paintPatterns();
+        UI.paintVibes();
+        UI.paintNowPlaying();
+        /* Apply once, then drop the query so a reload does not silently
+           throw away whatever the person edited afterwards. */
+        try { history.replaceState({}, '', location.pathname); } catch (e) {}
+        UI.toast('Loaded a shared beat — press play', 'success');
+      }
     }
 
     if (loaded.migrated) {

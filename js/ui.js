@@ -153,7 +153,7 @@
   }
 
   /* ---------------------------------------------------------------- toasts */
-  function toast(msg, kind) {
+  function toast(msg, kind, action) {
     if (!el.toasts) return;
     if (toastCount >= 3) {
       var first = el.toasts.firstElementChild;
@@ -162,13 +162,22 @@
     var t = document.createElement('div');
     t.className = 'toast toast-' + (kind || 'info');
     t.setAttribute('role', 'status');
-    t.textContent = msg;
+    t.innerHTML = '<span class="toast-msg"></span>';
+    t.querySelector('.toast-msg').textContent = msg;
+    if (action) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'toast-act';
+      b.textContent = action.label;
+      b.addEventListener('click', function (e) { e.stopPropagation(); action.fn(); t.remove(); toastCount--; });
+      t.appendChild(b);
+    }
     el.toasts.appendChild(t);
     toastCount++;
     var kill = setTimeout(function () {
       t.classList.add('out');
       setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); toastCount--; }, 200);
-    }, 2600);
+    }, action ? 9000 : 2600);
     t.addEventListener('click', function () { clearTimeout(kill); t.remove(); toastCount--; });
   }
 
@@ -207,7 +216,7 @@
         p.dataset.step = String(i);
         p.style.setProperty('--c', meta.color);
         p.tabIndex = (rowIndex === 0 && i === 0) ? 0 : -1;
-        p.addEventListener('click', onPad);
+        bindPadPress(p);
         p.addEventListener('keydown', onPadKey);
         pads[i].push(p);
         row.appendChild(p);
@@ -222,17 +231,52 @@
     LS.TRACK_IDS.forEach(function (id, r) {
       for (var i = 0; i < LS.STEP_COUNT; i++) {
         var p = pads[i][r];
-        var on = !!S.steps[id][i];
-        p.classList.toggle('on', on);
-        p.setAttribute('aria-pressed', on ? 'true' : 'false');
-        p.setAttribute('aria-label', LS.TRACKS[id].label + ' step ' + (i + 1) + (on ? ', on' : ', off'));
+        var v = S.steps[id][i] | 0;
+        p.classList.toggle('on', !!v);
+        p.setAttribute('data-vel', String(v));
+        p.setAttribute('aria-pressed', v ? 'true' : 'false');
+        var word = v === 2 ? 'accent' : v === 3 ? 'ghost' : v ? 'on' : 'off';
+        p.setAttribute('aria-label', LS.TRACKS[id].label + ' step ' + (i + 1) + ', ' + word);
       }
     });
   }
 
-  function onPad(e) {
-    var b = e.currentTarget;
-    toggleStep(b.dataset.track, parseInt(b.dataset.step, 10));
+  /* Tap toggles a step, hold cycles its weight: normal -> accent -> ghost.
+     The hold is the whole velocity feature; no extra mode to switch into. */
+  function bindPadPress(p) {
+    var timer = null, held = false;
+    function start() {
+      held = false;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        held = true;
+        cycleVelocity(p.dataset.track, parseInt(p.dataset.step, 10));
+      }, 420);
+    }
+    function cancel() { clearTimeout(timer); }
+    p.addEventListener('pointerdown', start);
+    p.addEventListener('pointerup', cancel);
+    p.addEventListener('pointercancel', cancel);
+    p.addEventListener('pointerleave', cancel);
+    p.addEventListener('click', function () {
+      if (held) { held = false; return; }
+      toggleStep(p.dataset.track, parseInt(p.dataset.step, 10));
+    });
+  }
+
+  function cycleVelocity(id, i) {
+    var S = LS.State.data;
+    var cur = S.steps[id][i] | 0;
+    var next = cur === 0 ? 1 : cur === 1 ? 2 : cur === 2 ? 3 : 1;
+    S.steps[id][i] = next;
+    S.patternId = null;
+    paintSequencer();
+    paintPatterns();
+    paintNowPlaying();
+    if (next === 2) LS.Audio.audition(id);
+    LS.State.saveSoon();
+    if (next === 2) toast('Accent', 'info');
+    else if (next === 3) toast('Ghost note', 'info');
   }
 
   function onPadKey(e) {

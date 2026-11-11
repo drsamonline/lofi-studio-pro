@@ -2,6 +2,40 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.1.0 — 11 November 2026
+
+Sound quality pass, and the first batch of roadmap items.
+
+### Fixed — the audio engine
+
+- **The reverb was wired as an insert.** Every voice was routed *through* the convolver with only a wet gain on the far side, so the dry signal never reached the output. At a reverb setting of zero the app was silent; at any other setting it was quiet, distant and swimming in a wash that read as noise. Reverb is now a proper parallel send.
+- **The snare was bare white noise.** A `NoiseSynth` with nothing under it is a burst of hiss, not a snare. It is now a tuned body (triangle at ~110 Hz) plus a band-limited crack at 1.8 kHz.
+- **The hi-hat was white noise through a 7.8 kHz highpass** — broadband hiss, eight to eleven times a bar, which is exactly what "noise" sounds like. It is now a band-passed tick at 7.6 kHz with a metallic bell at 9.8 kHz.
+- **The kick was three times louder than everything else** (RMS 0.056 against 0.003–0.018 for the rest), so the mix was a kick with a noise floor. Every voice is now trimmed to a measured balance.
+- **Bass and melody were monophonic** and retriggered on consecutive sixteenths, truncating their own release. Both are polyphonic now, so a new note rings over the old one instead of cutting it.
+- **Every voice now opens with a ramp** of 2–20 ms and ends by decaying to silence rather than being cut.
+- **No compressor, no DC blocker.** Added a 2:1 glue compressor, a −1 dB limiter, a 25 Hz high-pass (the tape stage is a waveshaper and a waveshaper fed a DC offset is a thump), and 30 ms fade-in / 45 ms fade-out on the transport.
+- **Reverb no longer waits on `Tone.Reverb.generate()`.** The impulse response is synthesised synchronously from decaying noise, so it can never time out into a half-built node.
+- **Vinyl crackle was a machine-gun of clicks.** It is now a quiet surface-hiss bed with sparse pops, at 40 % less gain.
+- Look-ahead raised to 120 ms and the impulse shortened to 1.8 s, to reduce dropouts and convolution cost on a slow phone.
+
+Measured on the same four seconds of the same pattern: no clipping, crest factor 6.9, and a spectrum that falls away above 300 Hz instead of sitting on a broadband shelf. The before/after figure is in `docs/audio-before-after.png`.
+
+### Added
+
+- **Per-step velocity.** Tap a pad to switch it on, **hold** it to cycle normal → accent → ghost. Three levels, one gesture, no mode to enter.
+- **Wake lock** — the screen stays on while the beat plays.
+- **Sleep timer** — 15 / 30 / 60 / 90 minutes, in Settings.
+- **Lock-screen controls** via the Media Session API, with artwork.
+- **Share a beat by link** — the pattern encodes to 48 hex characters, so a URL rebuilds it exactly. Applied once, then stripped from the address bar so a reload does not discard edits.
+- **Update prompt** when a new service worker is waiting.
+- **iOS install sheet** — `beforeinstallprompt` never fires on iOS, so one sheet explains Share → Add to Home Screen, once.
+- Actionable toasts.
+
+### Changed
+
+- 88 browser checks, up from 75, including velocity, sharing, the sleep timer, media session, and an audio headroom test that asserts a loud pattern never reaches full scale.
+
 ## 2.0.0 — 11 November 2026
 
 A rebuild: same instrument, new body. The single 2,366-line HTML file is now five focused scripts, the interface is a control surface rather than a stack of cards, and every bug found in the 1.0 audit is fixed.

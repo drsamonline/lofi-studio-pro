@@ -1,16 +1,18 @@
 /* =============================================================================
    Lofi Studio Pro — audio.js
-   The whole synthesis engine. Nothing here touches the DOM; the UI calls in
-   through the small public surface at the bottom.
+   The synthesis engine. Nothing here touches the DOM.
 
    Signal flow
-     instruments -> per-track Channel -\
-     ambience layers -> per-layer Gain ---> master Volume -> Limiter -> Analyser -> Destination
-     vinyl crackle -> highpass -> envelope /                       \
-                          (kept out of the lowpass so pops stay crisp)  -> Recorder
+     six instrument channels ─┐
+     vinyl crackle ───────────┼─> mixBus ─> compressor ─> limiter ─> fader ─> master ─> analyser ─> out
+     ambience layers ─────────┘                (glue)        (-1 dB)    (fades)   (user)     (meter)
+        └ both bypass the low-pass on purpose, so rain and crackle stay crisp
 
-   Every setter is a no-op until build() has run, so the UI can push state at
-   any time — before the first gesture, during boot, after a reset.
+   Voice discipline (this is what stops the clicks):
+     every voice opens from near-silence with a >=2 ms ramp, every envelope
+     ends by ramping to 0.001 rather than being cut, and nothing monophonic
+     retriggers on a running note. Pitched parts are polyphonic so a new note
+     never truncates a ringing one.
    ========================================================================== */
 (function (LS) {
   'use strict';
@@ -22,7 +24,10 @@
     ch: {},
     fx: {},
     master: null,
+    fader: null,
+    comp: null,
     limiter: null,
+    mixBus: null,
     analyser: null,
     recorder: null,
     crackle: {},
@@ -33,9 +38,40 @@
     transportStarted: false
   };
 
+  var SR = 44100;
+
   function db(pct) {
     if (pct <= 0) return -Infinity;
     return Tone.gainToDb(Math.min(1, pct / 100));
+  }
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+
+  /* Velocity: 1 ghost, 2 normal, 3 accent. Older saves used 1 for "on". */
+  function velFor(v) {
+    if (v === 3) return 1;
+    if (v === 1) return 0.45;
+    return 0.78;
+  }
+
+  /* ------------------------------------------------------------- reverb IR
+     Built synchronously from decaying noise instead of Tone.Reverb.generate().
+     generate() is async, can time out on a slow device, and a reverb without
+     an impulse response is exactly the kind of half-built node that produces
+     a burst of noise the first time it is hit. */
+  function makeImpulse(seconds, decay) {
+    var len = Math.max(1, Math.floor(SR * seconds));
+    var buf = Tone.getContext().createBuffer(2, len, SR);
+    for (var c = 0; c < 2; c++) {
+      var data = buf.getChannelData(c);
+      for (var i = 0; i < len; i++) {
+        var t = i / len;
+        /* a short pre-delay and an exponential tail, slightly decorrelated
+           between channels so the reverb has width */
+        var pre = i < SR * 0.008 ? 0 : 1;
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, decay) * pre * (c ? 0.94 : 1);
+      }
+    }
+    return buf;
   }
 
   /* ---------------------------------------------------------------- build */
@@ -43,26 +79,33 @@
     var S = LS.State.data;
 
     A.master = new Tone.Volume(db(S.master));
-    A.limiter = new Tone.Limiter(-1.5);
+    A.fader = new Tone.Gain(1);
+    A.limiter = new Tone.Limiter(-1);
+    A.comp = new Tone.Compressor({ threshold: -8, knee: 8, ratio: 2, attack: 0.008, release: 0.25 });
+    A.mixBus = new Tone.Gain(3.6);
     A.analyser = new Tone.Analyser(S.viz === 'wave' ? 'waveform' : 'fft', S.viz === 'wave' ? 512 : 96);
-    A.master.chain(A.limiter, A.analyser, Tone.Destination);
 
-    A.fx.filter = new Tone.Filter({ frequency: S.fx.filter, type: 'lowpass', rolloff: -24, Q: 0.7 });
-    A.fx.tape = new Tone.Distortion({ distortion: (S.fx.tape / 100) * 0.4, wet: S.fx.tape / 100, oversample: '2x' });
-    A.fx.chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: S.fx.chorus / 100 }).start();
-    A.fx.wow = new Tone.Tremolo({ frequency: 2.2, depth: S.fx.wow / 100, wet: S.fx.wow / 100 }).start();
-    A.fx.reverb = new Tone.Reverb({ decay: 2.4, wet: S.fx.reverb / 100 });
+    A.mixBus.chain(A.comp, A.limiter, A.fader, A.master, A.analyser, Tone.Destination);
 
-    /* Tone.js generates the impulse response on the main thread. Race it so a
-       slow device never blocks the first note behind a silent reverb. */
-    try {
-      await Promise.race([
-        A.fx.reverb.generate(),
-        new Promise(function (_, reject) { setTimeout(function () { reject(new Error('timeout')); }, 4000); })
-      ]);
-    } catch (e) {
-      console.warn('[Lofi] Reverb IR not ready, running dry', e);
-    }
+    /* 25 Hz high-pass: the tape stage is a waveshaper, and a waveshaper fed a
+       kick with a DC offset turns that offset into a thump. */
+    A.fx.dc = new Tone.Filter({ frequency: 25, type: 'highpass', rolloff: -12 });
+    A.fx.filter = new Tone.Filter({ frequency: S.fx.filter, type: 'lowpass', rolloff: -24, Q: 0.6 });
+    A.fx.tape = new Tone.Distortion({ distortion: (S.fx.tape / 100) * 0.3, wet: S.fx.tape / 100, oversample: '2x' });
+    A.fx.chorus = new Tone.Chorus({ frequency: 1.2, delayTime: 3.5, depth: 0.5, wet: S.fx.chorus / 100 }).start();
+    A.fx.wow = new Tone.Tremolo({ frequency: 2.4, depth: S.fx.wow / 100, wet: S.fx.wow / 100 }).start();
+    /* Reverb is a parallel send, not an insert: the dry signal has to reach
+       the bus whether or not the reverb is wet. */
+    A.fx.pre = new Tone.Gain(1);
+    A.fx.dry = new Tone.Gain(1);
+    A.fx.reverb = new Tone.Convolver({ buffer: new Tone.ToneAudioBuffer(makeImpulse(1.8, 3.0)) });
+    A.fx.reverbWet = new Tone.Gain(S.fx.reverb / 100);
+
+    A.fx.dc.chain(A.fx.filter, A.fx.tape, A.fx.chorus, A.fx.wow, A.fx.pre);
+    A.fx.pre.connect(A.fx.dry);
+    A.fx.pre.chain(A.fx.reverb, A.fx.reverbWet);
+    A.fx.dry.connect(A.mixBus);
+    A.fx.reverbWet.connect(A.mixBus);
 
     buildInstruments();
     buildCrackle();
@@ -72,60 +115,98 @@
   }
 
   function buildInstruments() {
-    LS.TRACK_IDS.forEach(function (id) {
+    var T = LS.TRACK_IDS;
+
+    T.forEach(function (id) {
       var t = LS.State.data.tracks[id];
       A.ch[id] = new Tone.Channel({ volume: db(t.vol), mute: t.mute, solo: t.solo })
-        .chain(A.fx.filter, A.fx.tape, A.fx.chorus, A.fx.wow, A.fx.reverb, A.master);
+        .chain(A.fx.dc);
     });
 
+    /* ---- kick: membrane with a short pitch drop ---- */
     A.inst.kick = new Tone.MembraneSynth({
-      pitchDecay: 0.045, octaves: 6,
-      envelope: { attack: 0.001, decay: 0.32, sustain: 0.01, release: 0.35 }
+      pitchDecay: 0.045, octaves: 5,
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.002, decay: 0.38, sustain: 0.01, release: 0.3 }
     }).connect(A.ch.kick);
+    A.inst.kick.volume.value = -7;
 
-    A.inst.snare = new Tone.NoiseSynth({
-      noise: { type: 'white' },
-      envelope: { attack: 0.001, decay: 0.16, sustain: 0 }
+    /* ---- snare: a body plus a band-limited noise crack ----
+       Bare white noise is what makes a drum machine sound like a hiss; the
+       tuned body underneath is what makes it read as a snare. */
+    A.snareTone = new Tone.Synth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.002, decay: 0.11, sustain: 0, release: 0.05 }
     }).connect(A.ch.snare);
+    A.snareTone.volume.value = -8;
 
-    /* Hats are high-passed noise, not MetalSynth: the metal oscillator bank is
-       the heaviest voice in Tone.js and hats fire up to 11 times a bar. */
-    A.hatFilter = new Tone.Filter({ frequency: 7800, type: 'highpass', Q: 0.6 }).connect(A.ch.hat);
+    A.snareNoise = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.002, decay: 0.15, sustain: 0 }
+    });
+    A.snareBand = new Tone.Filter({ frequency: 1800, type: 'bandpass', Q: 1.1 }).connect(A.ch.snare);
+    A.snareNoise.connect(A.snareBand);
+    A.snareNoise.volume.value = -1;
+
+    /* ---- hat: band-limited noise with a metallic bell, not raw hiss ---- */
+    A.hatBell = new Tone.Filter({ frequency: 9800, type: 'peaking', Q: 1.2, gain: 3 });
+    A.hatHP = new Tone.Filter({ frequency: 7600, type: 'bandpass', Q: 1.1 });
+    A.hatHP.chain(A.hatBell, A.ch.hat);
     A.inst.hat = new Tone.NoiseSynth({
       noise: { type: 'white' },
-      envelope: { attack: 0.001, decay: 0.045, sustain: 0 }
-    }).connect(A.hatFilter);
+      envelope: { attack: 0.004, decay: 0.052, sustain: 0 }
+    }).connect(A.hatHP);
+    A.inst.hat.volume.value = -8;
 
+    /* ---- bass: sine FM, no square modulation (that is where the buzz came from) ---- */
     A.inst.bass = new Tone.FMSynth({
-      harmonicity: 1, modulationIndex: 3,
-      oscillator: { type: 'sine' }, modulation: { type: 'square' },
-      envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.5 }
-    }).connect(A.ch.bass);
-
-    A.inst.keys = new Tone.PolySynth(Tone.AMSynth, {
-      maxPolyphony: 12,
-      envelope: { attack: 0.02, decay: 0.3, sustain: 0.45, release: 1.1 },
-      modulation: { type: 'sine' }
-    }).connect(A.ch.keys);
-
-    A.inst.melody = new Tone.FMSynth({
-      harmonicity: 2, modulationIndex: 2,
+      harmonicity: 1, modulationIndex: 1.8,
       oscillator: { type: 'sine' }, modulation: { type: 'sine' },
-      envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.7 }
+      envelope: { attack: 0.012, decay: 0.32, sustain: 0.32, release: 0.28 }
+    }).connect(A.ch.bass);
+    A.inst.bass.volume.value = -4;
+
+    /* ---- keys: a polyphonic electric piano. Polyphonic because a mono voice
+       cuts its own release on every chord change, and that cut is a click. ---- */
+    A.inst.keys = new Tone.PolySynth(Tone.FMSynth, {
+      maxPolyphony: 10,
+      harmonicity: 2, modulationIndex: 1.6,
+      oscillator: { type: 'sine' }, modulation: { type: 'sine' },
+      envelope: { attack: 0.02, decay: 0.5, sustain: 0.22, release: 1.1 }
+    }).connect(A.ch.keys);
+    A.inst.keys.volume.value = -10;
+
+    /* ---- melody: polyphonic so consecutive 16ths ring into each other ---- */
+    A.inst.melody = new Tone.PolySynth(Tone.FMSynth, {
+      maxPolyphony: 6,
+      harmonicity: 1.5, modulationIndex: 1.1,
+      oscillator: { type: 'sine' }, modulation: { type: 'sine' },
+      envelope: { attack: 0.008, decay: 0.22, sustain: 0.12, release: 0.45 }
     }).connect(A.ch.melody);
+    A.inst.melody.volume.value = -11;
   }
 
   function buildCrackle() {
     var S = LS.State.data;
-    A.crackle.gain = new Tone.Gain((S.fx.crackle / 100) * 0.35).connect(A.master);
-    A.crackle.env = new Tone.AmplitudeEnvelope({ attack: 0.001, decay: 0.014, sustain: 0, release: 0.01 })
+
+    /* A vinyl bed is mostly continuous surface hiss with occasional pops, not
+       a machine-gun of clicks. Two layers: a quiet hiss, sparse pops. */
+    A.crackle.hiss = new Tone.Noise('pink');
+    A.crackle.hissHP = new Tone.Filter({ frequency: 1200, type: 'highpass', Q: 0.5 });
+    A.crackle.hissLP = new Tone.Filter({ frequency: 7000, type: 'lowpass', Q: 0.5 });
+    A.crackle.gain = new Tone.Gain((S.fx.crackle / 100) * 0.10).connect(A.mixBus);
+    A.crackle.hiss.chain(A.crackle.hissHP, A.crackle.hissLP, A.crackle.gain);
+    A.crackle.hiss.start();
+
+    A.crackle.env = new Tone.AmplitudeEnvelope({ attack: 0.001, decay: 0.012, sustain: 0, release: 0.008 })
       .connect(A.crackle.gain);
-    A.crackle.filter = new Tone.Filter({ frequency: 2600, type: 'highpass' }).connect(A.crackle.env);
-    A.crackle.noise = new Tone.Noise('pink').connect(A.crackle.filter).start();
+    A.crackle.filter = new Tone.Filter({ frequency: 2400, type: 'highpass' }).connect(A.crackle.env);
+    A.crackle.noise = new Tone.Noise('white').connect(A.crackle.filter).start();
 
     A.crackle.loopId = Tone.Transport.scheduleRepeat(function (time) {
-      if (Math.random() < (LS.State.data.fx.crackle / 100) * 0.55) {
-        A.crackle.env.triggerAttackRelease(0.014, time);
+      /* ~4 pops a second at full crackle, scaled down from there */
+      if (Math.random() < (LS.State.data.fx.crackle / 100) * 0.16) {
+        A.crackle.env.triggerAttackRelease(0.01, time);
       }
     }, '32n');
   }
@@ -134,10 +215,13 @@
   function ensure() {
     if (A.ready) return Promise.resolve(true);
     if (A.building) return A.building;
-
     A.building = (async function () {
       try {
         if (typeof Tone === 'undefined') throw new Error('Tone.js missing');
+        /* a slightly longer look-ahead than the 100 ms default: this app
+           schedules a lot of short notes and a bigger buffer is the cheapest
+           insurance against dropouts on a slow phone. */
+        Tone.getContext().lookAhead = 0.12;
         if (Tone.context.state !== 'running') await Tone.start();
         await build();
         A.building = null;
@@ -148,7 +232,6 @@
         throw e;
       }
     })();
-
     return A.building;
   }
 
@@ -157,11 +240,11 @@
   function setFilter(v) { if (A.ready) A.fx.filter.frequency.value = v; }
   function setTape(v) {
     if (!A.ready) return;
-    A.fx.tape.distortion = (v / 100) * 0.4;
+    A.fx.tape.distortion = (v / 100) * 0.3;
     A.fx.tape.wet.value = v / 100;
   }
-  function setCrackle(v) { if (A.ready) A.crackle.gain.gain.value = (v / 100) * 0.35; }
-  function setReverb(v) { if (A.ready) A.fx.reverb.wet.value = v / 100; }
+  function setCrackle(v) { if (A.ready) A.crackle.gain.gain.value = (v / 100) * 0.10; }
+  function setReverb(v) { if (A.ready) A.fx.reverbWet.gain.value = v / 100; }
   function setChorus(v) { if (A.ready) A.fx.chorus.wet.value = v / 100; }
   function setWow(v) {
     if (!A.ready) return;
@@ -227,45 +310,78 @@
 
     for (var t = 0; t < LS.TRACK_IDS.length; t++) {
       var id = LS.TRACK_IDS[t];
-      if (!S.steps[id][i]) continue;
-      var inst = A.inst[id];
-      if (!inst) continue;
+      var v = S.steps[id][i];
+      if (!v) continue;
+      var vel = velFor(v);
+
       try {
-        if (id === 'kick') inst.triggerAttackRelease('C1', '8n', time);
-        else if (id === 'snare') inst.triggerAttackRelease('8n', time);
-        else if (id === 'hat') inst.triggerAttackRelease('32n', time, i % 4 === 0 ? 1 : 0.55);
-        else if (id === 'bass') inst.triggerAttackRelease(LS.octave(chord[0], -1), '8n', time);
-        else if (id === 'keys') inst.triggerAttackRelease(chord, '2n', time);
-        else if (id === 'melody') inst.triggerAttackRelease(LS.octave(chord[i % chord.length], 1), '16n', time);
+        if (id === 'kick') {
+          A.inst.kick.triggerAttackRelease('C1', '8n', time, vel);
+        } else if (id === 'snare') {
+          A.snareNoise.triggerAttackRelease('16n', time, vel);
+          A.snareTone.triggerAttackRelease('A2', '16n', time, vel * 0.7);
+        } else if (id === 'hat') {
+          A.inst.hat.triggerAttackRelease('32n', time, i % 4 === 0 ? vel : vel * 0.62);
+        } else if (id === 'bass') {
+          A.inst.bass.triggerAttackRelease(LS.octave(chord[0], -1), '8n', time, vel);
+        } else if (id === 'keys') {
+          A.inst.keys.triggerAttackRelease(chord, '2n', time, vel * 0.8);
+        } else if (id === 'melody') {
+          A.inst.melody.triggerAttackRelease(LS.octave(chord[i % chord.length], 1), '16n', time, vel * 0.9);
+        }
       } catch (e) {
         console.warn('[Lofi] trigger failed', id, e);
       }
     }
 
     if (S.autoFill && bar === 3 && i >= 12 && !S.tracks.snare.mute) {
-      try { A.inst.snare.triggerAttackRelease('16n', time, 0.5 + (i - 12) * 0.12); } catch (e) {}
+      try {
+        A.snareNoise.triggerAttackRelease('32n', time, 0.35 + (i - 12) * 0.1);
+      } catch (e) {}
     }
   }
 
-  /* Audition a single voice immediately — used when a pad is switched on, so
-     tapping a step tells you what you just added. */
+  /* Audition a voice when a pad is switched on — but only while stopped, so
+     it never doubles a note that the sequencer is about to play anyway. */
+  var VOICES = ['kick', 'snare', 'hat', 'bass', 'keys', 'melody'];
   function audition(id) {
-    if (!A.ready || !A.inst[id]) return;
+    if (!A.ready || VOICES.indexOf(id) < 0 || A.transportStarted) return;
     var S = LS.State.data;
     var chord = (LS.VIBES[S.vibe] || LS.VIBES.jazz).chords[0];
-    var now = Tone.now() + 0.02;
+    var now = Tone.now() + 0.03;
     try {
-      if (id === 'kick') A.inst.kick.triggerAttackRelease('C1', '8n', now);
-      else if (id === 'snare') A.inst.snare.triggerAttackRelease('16n', now);
-      else if (id === 'hat') A.inst.hat.triggerAttackRelease('32n', now, 0.8);
-      else if (id === 'bass') A.inst.bass.triggerAttackRelease(LS.octave(chord[0], -1), '8n', now);
-      else if (id === 'keys') A.inst.keys.triggerAttackRelease(chord, '8n', now);
-      else if (id === 'melody') A.inst.melody.triggerAttackRelease(LS.octave(chord[2] || chord[0], 1), '8n', now);
+      if (id === 'kick') A.inst.kick.triggerAttackRelease('C1', '8n', now, 0.8);
+      else if (id === 'snare') {
+        A.snareNoise.triggerAttackRelease('16n', now, 0.8);
+        A.snareTone.triggerAttackRelease('A2', '16n', now, 0.5);
+      } else if (id === 'hat') A.inst.hat.triggerAttackRelease('32n', now, 0.8);
+      else if (id === 'bass') A.inst.bass.triggerAttackRelease(LS.octave(chord[0], -1), '8n', now, 0.8);
+      else if (id === 'keys') A.inst.keys.triggerAttackRelease(chord, '8n', now, 0.7);
+      else if (id === 'melody') A.inst.melody.triggerAttackRelease(LS.octave(chord[2] || chord[0], 1), '8n', now, 0.7);
     } catch (e) {}
+  }
+
+  /* A 30 ms ramp in and a 45 ms ramp out. Without these, starting or stopping
+     the transport cuts a waveform mid-cycle and you hear a click. */
+  function fadeIn() {
+    if (!A.ready) return;
+    var now = Tone.now();
+    A.fader.gain.cancelScheduledValues(now);
+    A.fader.gain.setValueAtTime(0.0001, now);
+    A.fader.gain.linearRampToValueAtTime(1, now + 0.03);
+  }
+  function fadeOut(done) {
+    if (!A.ready) { if (done) done(); return; }
+    var now = Tone.now();
+    A.fader.gain.cancelScheduledValues(now);
+    A.fader.gain.setValueAtTime(A.fader.gain.value, now);
+    A.fader.gain.linearRampToValueAtTime(0.0001, now + 0.045);
+    if (done) setTimeout(done, 60);
   }
 
   function startTransport() {
     Tone.Transport.bpm.value = LS.State.data.bpm;
+    fadeIn();
     if (Tone.Transport.state !== 'started') Tone.Transport.start();
     A.transportStarted = true;
   }
@@ -289,7 +405,7 @@
       var noise = new Tone.Noise('brown').start();
       var filter = new Tone.Filter({ frequency: 700, type: 'lowpass' });
       noise.chain(filter, out);
-      var env = new Tone.AmplitudeEnvelope({ attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 }).connect(out);
+      var env = new Tone.AmplitudeEnvelope({ attack: 0.002, decay: 0.05, sustain: 0, release: 0.02 }).connect(out);
       var popFilter = new Tone.Filter({ frequency: 1800, type: 'highpass' }).connect(env);
       var popNoise = new Tone.Noise('white').connect(popFilter).start();
       var loop = new Tone.Loop(function (time) {
@@ -308,10 +424,10 @@
       lfo.connect(gain.gain);
       noise.chain(filter, gain, out);
       var clink = new Tone.MetalSynth({
-        frequency: 800, envelope: { attack: 0.001, decay: 0.15, release: 0.05 },
+        frequency: 800, envelope: { attack: 0.002, decay: 0.15, release: 0.05 },
         harmonicity: 8, modulationIndex: 20, resonance: 3000, octaves: 1
       }).connect(out);
-      clink.volume.value = -20;
+      clink.volume.value = -22;
       var loop = new Tone.Loop(function (time) {
         if (Math.random() < 0.12) clink.triggerAttackRelease('16n', time);
       }, '4n').start(0);
@@ -330,7 +446,7 @@
     },
     birds: function (out) {
       var synth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.05 } }).connect(out);
-      synth.volume.value = -10;
+      synth.volume.value = -14;
       var notes = ['C6', 'D6', 'E6', 'G6', 'A6'];
       var loop = new Tone.Loop(function (time) {
         if (Math.random() < 0.25) {
@@ -365,8 +481,8 @@
       };
     },
     night: function (out) {
-      var cricket = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.001, decay: 0.02, sustain: 0.3, release: 0.02 } }).connect(out);
-      cricket.volume.value = -22;
+      var cricket = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.002, decay: 0.02, sustain: 0.3, release: 0.02 } }).connect(out);
+      cricket.volume.value = -26;
       var loop = new Tone.Loop(function (time) {
         if (Math.random() < 0.5) {
           var n = 3 + Math.floor(Math.random() * 4);
@@ -407,7 +523,7 @@
 
   function ambienceOn(id) {
     if (!A.ready || A.amb[id]) return;
-    var vol = new Tone.Gain((LS.State.data.amb[id].vol / 100) * 0.9).connect(A.master);
+    var vol = new Tone.Gain((LS.State.data.amb[id].vol / 100) * 0.75).connect(A.mixBus);
     A.amb[id] = { gain: vol, teardown: builders[id](vol) };
   }
   function ambienceOff(id) {
@@ -417,7 +533,7 @@
     try { e.gain.dispose(); } catch (err) {}
     delete A.amb[id];
   }
-  function ambienceVol(id, v) { if (A.amb[id]) A.amb[id].gain.gain.value = (v / 100) * 0.9; }
+  function ambienceVol(id, v) { if (A.amb[id]) A.amb[id].gain.gain.value = (v / 100) * 0.75; }
   function ambienceCount() { return Object.keys(A.amb).length; }
 
   /* ------------------------------------------------------------- recorder */
@@ -429,7 +545,7 @@
     if (!canRecord()) throw new Error('Recording is not supported in this browser');
     if (!A.recorder) {
       A.recorder = new Tone.Recorder();
-      A.limiter.connect(A.recorder);
+      A.master.connect(A.recorder);
     }
     A.recorder.start();
   }
@@ -445,17 +561,16 @@
       A.transportStarted = false;
       clearSequence();
       if (A.inst.keys && A.inst.keys.releaseAll) A.inst.keys.releaseAll();
+      if (A.inst.melody && A.inst.melody.releaseAll) A.inst.melody.releaseAll();
       Object.keys(A.amb).forEach(ambienceOff);
-      /* Ramp the master to silence so release tails die immediately, then
-         restore. Cheaper and more reliable than disposing and rebuilding. */
-      if (A.master) {
+      if (A.fader) {
         var now = Tone.now();
-        A.master.volume.cancelScheduledValues(now);
-        A.master.volume.setValueAtTime(A.master.volume.value, now);
-        A.master.volume.linearRampToValueAtTime(-80, now + 0.05);
+        A.fader.gain.cancelScheduledValues(now);
+        A.fader.gain.setValueAtTime(A.fader.gain.value, now);
+        A.fader.gain.linearRampToValueAtTime(0.0001, now + 0.04);
         setTimeout(function () {
-          try { A.master.volume.setValueAtTime(db(LS.State.data.master), Tone.now()); } catch (e) {}
-        }, 220);
+          try { A.fader.gain.setValueAtTime(1, Tone.now()); } catch (e) {}
+        }, 260);
       }
     } catch (e) {
       console.warn('[Lofi] panic', e);
@@ -469,16 +584,21 @@
       Tone.Transport.cancel();
       Object.keys(A.amb).forEach(ambienceOff);
       clearSequence();
-      Object.keys(A.inst).forEach(function (k) { try { A.inst[k].dispose(); } catch (e) {} });
+      ['kick', 'hat', 'bass', 'keys', 'melody', 'snareNoise', 'snareTone'].forEach(function (k) {
+        var n = A.inst[k] || A[k];
+        if (n) { try { n.dispose(); } catch (e) {} }
+      });
       Object.keys(A.ch).forEach(function (k) { try { A.ch[k].dispose(); } catch (e) {} });
       Object.keys(A.fx).forEach(function (k) { try { A.fx[k].dispose(); } catch (e) {} });
-      ['gain', 'env', 'filter', 'noise'].forEach(function (k) {
+      ['gain', 'env', 'filter', 'noise', 'hiss', 'hissHP', 'hissLP'].forEach(function (k) {
         if (A.crackle[k]) { try { A.crackle[k].dispose(); } catch (e) {} }
       });
-      if (A.hatFilter) { try { A.hatFilter.dispose(); } catch (e) {} }
-      if (A.analyser) { try { A.analyser.dispose(); } catch (e) {} }
-      if (A.limiter) { try { A.limiter.dispose(); } catch (e) {} }
-      if (A.master) { try { A.master.dispose(); } catch (e) {} }
+      ['hatBell', 'hatHP', 'snareBand'].forEach(function (k) {
+        if (A[k]) { try { A[k].dispose(); } catch (e) {} }
+      });
+      ['analyser', 'master', 'fader', 'limiter', 'comp', 'mixBus'].forEach(function (k) {
+        if (A[k]) { try { A[k].dispose(); } catch (e) {} }
+      });
     } catch (e) {
       console.warn('[Lofi] dispose', e);
     }
@@ -506,6 +626,7 @@
     clearSequence: clearSequence,
     startTransport: startTransport,
     stopTransport: stopTransport,
+    fadeOut: fadeOut,
     audition: audition,
     ambienceOn: ambienceOn,
     ambienceOff: ambienceOff,
