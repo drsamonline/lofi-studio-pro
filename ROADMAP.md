@@ -1,6 +1,6 @@
 # Roadmap
 
-**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
+**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
 
 What to add next, ordered by value per line of code. Each item carries an effort estimate and a bloat cost, because the constraint that matters for this app is not features — it is that it stays one screen that loads instantly.
 
@@ -29,10 +29,10 @@ The app already works fully offline, including its audio library. What is left i
 | # | Idea | Why it matters | Effort | Bloat |
 | --- | --- | --- | --- | --- |
 | 9 | ✅ 2.1.0 **iOS install instructions sheet** | `beforeinstallprompt` never fires on iOS, so the install button simply does not exist there. A one-time "Share → Add to Home Screen" hint recovers the whole iPhone audience | S | one dismissible sheet |
-| 10 | **Cache budget and eviction** | The shell is ~600 KB and grows with screenshots; cap it and prune old entries so an installed app never eats a phone's quota | S | ~20 lines in `sw.js` |
+| 10 | ✅ 2.2.0 **Cache budget and eviction** | The shell is ~600 KB and grows with screenshots; cap it and prune old entries so an installed app never eats a phone's quota | S | ~20 lines in `sw.js` |
 | 11 | **Save takes to a folder** (File System Access API, where available) | Turns "download" into "it appears in my Lofi folder" — the difference between a demo and a tool | M | ~50 lines, progressive |
 | 12 | **Export the pattern as a file** (`.lofi.json`) | Backup, share, and a migration path that does not depend on `localStorage` surviving a browser clean-up | S | ~30 lines |
-| 13 | **Recover gracefully from a lost AudioContext** | iOS suspends the context on a phone call or a long background; the app currently just goes quiet | M | ~30 lines |
+| 13 | ✅ 2.2.0 **Recover gracefully from a lost AudioContext** | iOS suspends the context on a phone call or a long background; the app currently just goes quiet | M | ~30 lines |
 | 14 | **Offline-first README and in-app "works offline" hint** | People do not know it works on a plane until they try it and are surprised | S | copy |
 
 ## Fast — perceived and actual speed
@@ -46,7 +46,7 @@ The first load is already small (≈120 KB of app code plus a 349 KB audio libra
 | 17 | **`content-visibility: auto` on the hidden views** | Four of five views are inert but still cost layout on repaint | S | 2 lines of CSS |
 | 18 | **Minify and precompress the shell** | ~90 KB of app code becomes ~40 KB; a `make release` script, not a build system | S | a script, no runtime cost |
 | 19 | **Stop the visualiser entirely when the tab is hidden** | It is paused, but the requestAnimationFrame loop still wakes 30 times a second | S | 3 lines |
-| 20 | **Budget in CI** | Fail the build if the shell exceeds 700 KB — the only way this stays fast in a year | S | one step in the workflow |
+| 20 | ✅ 2.2.0 **Budget in CI** | Fail the build if the shell exceeds 700 KB — the only way this stays fast in a year | S | one step in the workflow |
 
 ## Feel — the difference between good and delightful
 
@@ -56,7 +56,7 @@ The first load is already small (≈120 KB of app code plus a 349 KB audio libra
 | 22 | Pad glow follows velocity, not just on/off | S | CSS only |
 | 23 | Long-press a pattern chip to preview it on the next bar | M | one timer |
 | 24 | A tiny "what's this" tooltip on first visit, three steps | S | one overlay |
-| 25 | Drag across pads to paint a row (pointer-move while down) | M | ~40 lines |
+| 25 | ✅ 2.2.0 Drag across pads to paint a row (pointer-move while down) | M | ~40 lines |
 | 26 | Copy a track's row to another track | S | one menu |
 
 ## Bigger swings, if the app earns them

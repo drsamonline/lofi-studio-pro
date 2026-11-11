@@ -19,6 +19,15 @@ jobs:
       - name: Install dependencies
         run: pip install websocket-client
 
+      - name: Shell size budget
+        run: |
+          bytes=$(cat index.html css/app.css js/*.js vendor/tone.min.js sw.js manifest.webmanifest | wc -c)
+          echo "shell payload: $((bytes / 1024)) KB"
+          if [ "$bytes" -gt 768000 ]; then
+            echo "::error::The shell passed the 750 KB budget. This app stays fast because it stays small."
+            exit 1
+          fi
+
       - name: Locate Chrome
         run: |
           for b in /usr/bin/google-chrome /usr/bin/google-chrome-stable \

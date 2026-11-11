@@ -7,10 +7,10 @@
 [**▶ Open the app**](https://drsamonline.github.io/lofi-studio-pro/) · [Landing page](https://drsamonline.github.io/lofi-studio-pro/landing.html) · [Report a bug](https://github.com/drsamonline/lofi-studio-pro/issues)
 
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c6ef5)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.2.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%C2%B7%20offline-5a0fc8)](manifest.webmanifest)
 [![Tests](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml/badge.svg)](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml)
-[![88 browser checks](https://img.shields.io/badge/browser%20checks-88%20passing-2ea44f)](docs/TEST-REPORT.md)
+[![91 browser checks](https://img.shields.io/badge/browser%20checks-91%20passing-2ea44f)](docs/TEST-REPORT.md)
 [![Build](https://img.shields.io/badge/build-none%20required-informational)](.)
 [![No trackers](https://img.shields.io/badge/trackers-zero-brightgreen)](.)
 
@@ -28,7 +28,7 @@ It was built for the ninety seconds between two tasks: no login, no library, no 
 
 ## Features
 
-**Sequencer** — six tracks (kick, snare, hat, bass, keys, melody) across sixteen steps, with ten ready patterns, twelve four-bar chord progressions, swing from straight to lazy, and an optional snare fill every fourth bar. Tap a pad to switch it on, **hold it** to cycle normal → accent → ghost. Tap a track name to mute it; the mixer has per-track faders and solo.
+**Sequencer** — six tracks (kick, snare, hat, bass, keys, melody) across sixteen steps, with ten ready patterns, twelve four-bar chord progressions, swing from straight to lazy, and an optional snare fill every fourth bar. Tap a pad to switch it on, **hold it** to cycle normal → accent → ghost, **drag** across a row to draw a run. Hold a track name to empty that row. Tap a track name to mute it; the mixer has per-track faders and solo.
 
 **Tape chain** — low-pass filter, tape saturation, vinyl crackle, reverb, chorus and wow-and-flutter, all live while the beat runs.
 
@@ -66,6 +66,8 @@ Opening `index.html` straight from disk also works; only the service worker is s
 | Play / stop | `Space` | Play button |
 | Move around the sequencer | Arrow keys | Tap a pad |
 | Accent / ghost a step | — | Hold a pad |
+| Draw a run of steps | — | Drag across a row |
+| Empty a track | — | Hold the track name |
 | Mute a track | — | Tap the track name (sequencer) or `M` (mixer) |
 | Solo a track | — | `S` in the mixer |
 | Tempo | — | `−` / `+`, or `TAP` four times |
@@ -136,7 +138,7 @@ Three decisions worth knowing:
 
 ## Testing
 
-88 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
+91 browser checks run against the real app in headless Chromium — every transport control, all ten patterns, twelve chord sets, ten themes, nine ambience layers, the six knobs, the faders, per-step velocity, drag-to-paint, hold-to-clear, link sharing, the sleep timer, the media session, audio headroom, persistence, a corrupted save, migration from v1, recording, offline reload, and the layout at 360 / 390 / 768 / 1280 px.
 
 ```bash
 pip install websocket-client && python3 tests/run_browser_tests.py

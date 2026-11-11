@@ -205,6 +205,7 @@
       head.innerHTML =
         '<span class="seq-dot" style="--c:' + meta.color + '"></span>' +
         '<span class="seq-name">' + meta.label + '</span>';
+      bindTrackClear(head, id);
       row.appendChild(head);
 
       for (var i = 0; i < LS.STEP_COUNT; i++) {
@@ -241,27 +242,111 @@
     });
   }
 
-  /* Tap toggles a step, hold cycles its weight: normal -> accent -> ghost.
-     The hold is the whole velocity feature; no extra mode to switch into. */
+  /* Tap toggles a step, hold cycles its weight, drag paints a run of steps.
+     One gesture set, no mode to enter. */
+  var paint = null;
+  var justDragged = false;
+
+  function padAt(x, y) {
+    var hit = document.elementFromPoint(x, y);
+    return (hit && hit.classList && hit.classList.contains('pad')) ? hit : null;
+  }
+
+  function writeStep(id, i, val) {
+    var S = LS.State.data;
+    if (S.steps[id][i] === val) return false;
+    S.steps[id][i] = val;
+    S.patternId = null;
+    return true;
+  }
+
   function bindPadPress(p) {
-    var timer = null, held = false;
-    function start() {
-      held = false;
-      clearTimeout(timer);
-      timer = setTimeout(function () {
-        held = true;
-        cycleVelocity(p.dataset.track, parseInt(p.dataset.step, 10));
+    p.addEventListener('pointerdown', function (e) {
+      if (e.button !== undefined && e.button !== 0) return;
+      var id = p.dataset.track, i = parseInt(p.dataset.step, 10);
+      var timer = setTimeout(function () {
+        paint = null;                 // a hold is not a drag
+        cycleVelocity(id, i);
       }, 420);
-    }
-    function cancel() { clearTimeout(timer); }
-    p.addEventListener('pointerdown', start);
-    p.addEventListener('pointerup', cancel);
-    p.addEventListener('pointercancel', cancel);
-    p.addEventListener('pointerleave', cancel);
+      paint = {
+        value: LS.State.data.steps[id][i] ? 0 : 1,
+        origin: { id: id, i: i },
+        x: e.clientX, y: e.clientY, moved: false, changed: false, timer: timer
+      };
+    });
     p.addEventListener('click', function () {
-      if (held) { held = false; return; }
+      if (justDragged) { justDragged = false; return; }
       toggleStep(p.dataset.track, parseInt(p.dataset.step, 10));
     });
+  }
+
+  /* Registered once, on the document: a drag that leaves its starting pad still
+     paints, and a pointer that ends anywhere still commits. */
+  function bindPaintGestures() {
+    document.addEventListener('pointermove', function (e) {
+      if (!paint) return;
+      if (!paint.moved && Math.abs(e.clientX - paint.x) + Math.abs(e.clientY - paint.y) < 8) return;
+      if (!paint.moved) {
+        clearTimeout(paint.timer);
+        paint.moved = true;
+        /* the pad the gesture started on belongs to the run as well */
+        if (writeStep(paint.origin.id, paint.origin.i, paint.value)) {
+          paint.changed = true;
+          paintSequencer();
+        }
+      }
+      var pad = padAt(e.clientX, e.clientY);
+      if (!pad) return;
+      if (writeStep(pad.dataset.track, parseInt(pad.dataset.step, 10), paint.value)) {
+        paint.changed = true;
+        paintSequencer();
+      }
+    });
+
+    document.addEventListener('pointerup', function () {
+      if (!paint) return;
+      clearTimeout(paint.timer);
+      if (paint.moved) {
+        justDragged = true;
+        if (paint.changed) {
+          paintPatterns();
+          paintNowPlaying();
+          LS.State.saveSoon();
+        }
+      }
+      paint = null;
+    });
+  }
+
+  /* Hold a track name to empty that row — building from scratch otherwise means
+     tapping forty pads off. The undo toast is the safety net. */
+  function bindTrackClear(head, id) {
+    var timer = null, held = false;
+    head.addEventListener('pointerdown', function () {
+      held = false;
+      timer = setTimeout(function () {
+        held = true;
+        var before = LS.State.data.steps[id].slice();
+        if (before.every(function (v) { return !v; })) return;
+        LS.State.data.steps[id] = new Array(LS.STEP_COUNT).fill(0);
+        LS.State.data.patternId = null;
+        paintSequencer(); paintPatterns(); paintNowPlaying();
+        LS.State.saveSoon();
+        toast(LS.TRACKS[id].label + ' cleared', 'info', {
+          label: 'Undo',
+          fn: function () {
+            LS.State.data.steps[id] = before;
+            paintSequencer();
+            LS.State.saveSoon();
+          }
+        });
+      }, 600);
+    });
+    head.addEventListener('pointerup', function () { clearTimeout(timer); });
+    head.addEventListener('pointerleave', function () { clearTimeout(timer); });
+    head.addEventListener('click', function (e) {
+      if (held) { held = false; e.stopPropagation(); e.preventDefault(); }
+    }, true);
   }
 
   function cycleVelocity(id, i) {
@@ -703,6 +788,7 @@
       buildPatterns();
       buildVibes();
       buildSequencer();
+      bindPaintGestures();
       buildMixer();
       buildFx();
       buildAmbience();

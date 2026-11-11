@@ -2,6 +2,25 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.2.0 — 11 November 2026
+
+Gestures and robustness — the parts you only notice when they are missing.
+
+### Added
+
+- **Drag to paint.** Press on a pad and drag across the row to draw a run of steps in one stroke. The gesture paints in whichever direction it started (on or off), and a long press still cycles velocity, so nothing changed for a single tap.
+- **Hold a track name to empty that row**, with an Undo in the toast. Building a pattern from scratch used to mean tapping forty pads off one at a time.
+- **A shell size budget in CI.** The build fails if the payload passes 750 KB. This app stays fast because it stays small, and that is a promise worth enforcing rather than intending.
+
+### Fixed
+
+- **iOS lost its audio after a phone call.** The AudioContext is suspended by the OS on a call, a lock or a long background, and the app came back looking like it was playing and making no sound. It now resumes the context when the tab is visible again.
+- **The service worker cache was unbounded.** Every navigation re-cached `index.html` and every stray asset added an entry; an installed app could quietly grow until it hit the storage quota. It is now capped at 40 entries with oldest-first eviction.
+
+### Changed
+
+- 91 browser checks, up from 88: drag-to-paint, hold-to-clear and its undo.
+
 ## 2.1.0 — 11 November 2026
 
 Sound quality pass, and the first batch of roadmap items.

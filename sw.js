@@ -5,7 +5,7 @@
    fully offline after one visit and removes the single point of failure the
    previous CDN build had. Bump VERSION to publish new assets.
    ========================================================================== */
-const VERSION = 'lofi-2.1.0';
+const VERSION = 'lofi-2.2.0';
 const SHELL = [
   './',
   './index.html',
@@ -45,6 +45,17 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+/* The shell is 14 files, but every navigation re-caches index.html and every
+   stray asset adds an entry. Cap the cache so an installed app can never eat a
+   phone's storage quota. */
+const MAX_ENTRIES = 40;
+async function trim(cache) {
+  const keys = await cache.keys();
+  if (keys.length <= MAX_ENTRIES) return;
+  const excess = keys.length - MAX_ENTRIES;
+  for (let i = 0; i < excess; i++) await cache.delete(keys[i]);
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -59,7 +70,7 @@ self.addEventListener('fetch', (event) => {
       try {
         const fresh = await fetch(req);
         const cache = await caches.open(VERSION);
-        cache.put('./index.html', fresh.clone());
+        cache.put('./index.html', fresh.clone()).then(() => trim(cache));
         return fresh;
       } catch (err) {
         const cached = await caches.match('./index.html');
@@ -78,7 +89,7 @@ self.addEventListener('fetch', (event) => {
       const res = await fetch(req);
       if (res && res.status === 200 && res.type === 'basic') {
         const cache = await caches.open(VERSION);
-        cache.put(req, res.clone());
+        cache.put(req, res.clone()).then(() => trim(cache));
       }
       return res;
     } catch (err) {

@@ -480,7 +480,16 @@
     });
     document.addEventListener('visibilitychange', function () {
       LS.Viz.pause(document.hidden);
-      if (!document.hidden && playing) keepAwake();
+      if (document.hidden) return;
+      if (playing) keepAwake();
+      /* iOS suspends the AudioContext on a phone call, a lock or a long
+         background. Without this the app comes back looking like it is
+         playing and making no sound at all. */
+      try {
+        if (typeof Tone !== 'undefined' && Tone.context.state === 'suspended') {
+          Tone.start().catch(function () {});
+        }
+      } catch (e) {}
     });
   }
 
