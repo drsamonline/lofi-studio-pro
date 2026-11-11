@@ -2,6 +2,19 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.10.0 — 11 November 2026
+
+The audio library moved to its current major version.
+
+### Changed
+
+- **Tone.js 14.8.49 → 15.1.22.** Tone 14 has not been maintained since 2023. The upgrade needed **no application changes**: the 139 browser checks passed against 15.1.22 on the first run, including scheduling, the effect chain, the recorder, the analyser and every voice. The vendored file is 341 KB, unchanged.
+- **Recording is capped at three minutes**, with the elapsed time already in the top bar. A take longer than that is a mistake, not a recording.
+
+### Still blocked
+
+- **WAV export.** Three approaches were tried against Tone 15 and all failed: a blob-URL worklet through `Tone.getContext().addAudioWorkletModule`, the same through `rawContext.audioWorklet.addModule`, and a same-origin module file. Tone memoises its first `addModule` call in `_workletPromise`, and `createAudioWorkletNode` then looks up a registry the wrapper never populated. Recording stays on `Tone.Recorder` (WebM/Opus) rather than shipping a "WAV" button that quietly re-encodes lossy audio.
+
 ## 2.9.0 — 11 November 2026
 
 The last of the small ones.

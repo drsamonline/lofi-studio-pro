@@ -7,7 +7,7 @@
 [**▶ Open the app**](https://drsamonline.github.io/lofi-studio-pro/) · [Landing page](https://drsamonline.github.io/lofi-studio-pro/landing.html) · [Report a bug](https://github.com/drsamonline/lofi-studio-pro/issues)
 
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c6ef5)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.9.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.10.0-e94560)](https://github.com/drsamonline/lofi-studio-pro/releases)
 [![PWA](https://img.shields.io/badge/PWA-installable%20%C2%B7%20offline-5a0fc8)](manifest.webmanifest)
 [![Tests](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml/badge.svg)](https://github.com/drsamonline/lofi-studio-pro/actions/workflows/tests.yml)
 [![139 browser checks](https://img.shields.io/badge/browser%20checks-139%20passing-2ea44f)](docs/TEST-REPORT.md)
@@ -148,7 +148,7 @@ js/main.js                 controller: transport, presets, recording, PWA wiring
 js/midi.js                 Standard MIDI File writer
 sw.js                      precache + navigation fallback
 manifest.webmanifest       install metadata, icons, shortcuts
-vendor/tone.min.js         Tone.js 14.8.49 (MIT)
+vendor/tone.min.js         Tone.js 15.1.22 (MIT)
 ```
 
 Signal path: six instrument channels → low-pass → tape → chorus → wow → reverb → master volume → limiter → destination, with the vinyl crackle deliberately tapped in after the low-pass so the pops stay crisp, and a recorder hanging off the limiter.
@@ -177,8 +177,8 @@ The web app is the source of truth; the wrappers are thin and live in CI, so not
 
 | Target | How | Built |
 | --- | --- | --- |
-| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.9.0.apk` (3.8 MB) — debug-signed, so sideload it |
-| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.9.0-x64-setup.exe` (2.1 MB) and `.msi` (2.9 MB) |
+| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-v2.10.0.apk` (3.8 MB) — debug-signed, so sideload it |
+| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.10.0-x64-setup.exe` (2.1 MB) and `.msi` (2.9 MB) |
 | **PWA** | The live site installs to any home screen | tested — this is the build the 88 browser checks run against |
 
 All three are attached to the [latest release](https://github.com/drsamonline/lofi-studio-pro/releases/latest). Push a tag and CI rebuilds them from that exact commit.

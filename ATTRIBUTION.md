@@ -4,7 +4,7 @@ Lofi Studio Pro is a thin, opinionated layer on top of one excellent library. He
 
 ## Sound engine
 
-**[Tone.js](https://tonejs.github.io/)** 14.8.49 — MIT License, © 2014–2023 Yotam Mann and contributors.
+**[Tone.js](https://tonejs.github.io/)** 15.1.22 — MIT License, © 2014–2023 Yotam Mann and contributors.
 
 Tone.js provides the Web Audio abstraction, the transport and clock, every synthesiser voice (Membrane, Noise, FM, AM, Poly, Metal), the effect units (Filter, Distortion, Chorus, Tremolo, Reverb, Limiter, Volume, Analyser) and the recorder. It is vendored unmodified at `vendor/tone.min.js` so the app can run offline; the licence text is reproduced below.
 

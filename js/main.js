@@ -574,6 +574,8 @@
       recTimer = setInterval(function () {
         var s = Math.floor((Date.now() - t0) / 1000);
         $('rec-time').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+        /* a take longer than this is a mistake, not a recording */
+        if (s >= 180) { UI.toast('Recording capped at three minutes', 'warn'); toggleRecord(); }
       }, 500);
       UI.toast('Recording — press stop to save', 'info');
       return;
