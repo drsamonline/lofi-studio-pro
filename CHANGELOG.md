@@ -2,6 +2,20 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.8.0 — 11 November 2026
+
+Two things that make a loop breathe.
+
+### Added
+
+- **Chance per step.** A "Chance" button in the sequencer header puts the grid into chance mode: tapping a step now cycles how often it actually fires — always, 75 %, 50 %, 25 % — and the pad shows the number and dims with it. A step that is on can still skip, which is where variation comes from. Leave the mode and the pads go back to being on/off.
+- **Per-track reverb send.** Each mixer strip gets a REV slider next to its pan, feeding that channel straight into the convolver on top of the master send. Drums stay dry, keys swim.
+
+### Notes
+
+- Both travel with the beat: they are in the state, in presets, in exports, in song slots and in undo.
+- 134 browser checks, up from 128.
+
 ## 2.7.0 — 11 November 2026
 
 A loop becomes a song.

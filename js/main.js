@@ -598,6 +598,10 @@
     $('btn-midi').addEventListener('click', exportMidi);
     $('btn-clear').addEventListener('click', clearPattern);
     $('btn-song').addEventListener('click', toggleSong);
+    $('btn-chance').addEventListener('click', function () {
+      UI.setChanceMode(!UI.isChanceMode());
+      UI.toast(UI.isChanceMode() ? 'Chance mode — tap a step to set how often it fires' : 'Step mode', 'info');
+    });
     bindSongSlots();
     $('btn-import').addEventListener('click', function () { $('import-file').click(); });
     $('import-file').addEventListener('change', function () {

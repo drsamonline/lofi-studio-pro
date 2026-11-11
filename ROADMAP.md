@@ -1,6 +1,6 @@
 # Roadmap
 
-**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. **Shipped in 2.4.0:** deferred audio library, metronome, count-in, per-track pan. **Shipped in 2.5.0:** undo/redo, shortcut sheet, haptics. **Shipped in 2.6.0:** MIDI export, clear pattern, remembered view. **Shipped in 2.7.0:** song mode. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
+**Shipped in 2.1.0:** wake lock, sleep timer, media session controls, share-by-link, per-step velocity, fade in/out, update prompt, iOS install sheet. **Shipped in 2.2.0:** drag-to-paint, hold-to-clear, cache budget, CI size budget, AudioContext recovery. **Shipped in 2.3.0:** named presets, export and import a beat file. **Shipped in 2.4.0:** deferred audio library, metronome, count-in, per-track pan. **Shipped in 2.5.0:** undo/redo, shortcut sheet, haptics. **Shipped in 2.6.0:** MIDI export, clear pattern, remembered view. **Shipped in 2.7.0:** song mode. **Shipped in 2.8.0:** per-step chance, per-track reverb send. Those eight rows are kept below with a ✅ so the list stays a record rather than a wish.
 
 What to add next, ordered by value per line of code. Each item carries an effort estimate and a bloat cost, because the constraint that matters for this app is not features — it is that it stays one screen that loads instantly.
 
@@ -55,7 +55,7 @@ The first load is already small (≈120 KB of app code plus a 349 KB audio libra
 | # | Idea | Effort | Bloat |
 | --- | --- | --- | --- |
 | 21 | Haptics on pad hit (`navigator.vibrate`) | S | 2 lines |
-| 22 | Pad glow follows velocity, not just on/off | S | CSS only |
+| 22 | ✅ 2.8.0 Pad glow follows velocity, not just on/off | S | CSS only |
 | 23 | Long-press a pattern chip to preview it on the next bar | M | one timer |
 | 24 | A tiny "what's this" tooltip on first visit, three steps | S | one overlay |
 | 25 | ✅ 2.2.0 Drag across pads to paint a row (pointer-move while down) | M | ~40 lines |

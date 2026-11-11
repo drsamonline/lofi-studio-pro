@@ -9,6 +9,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
   var pads = [];          // pads[step][trackIndex] = button
+  var chanceMode = false;
   var knobs = {};
   var lastStep = -1;
   var toastCount = 0;
@@ -237,7 +238,17 @@
         p.setAttribute('data-vel', String(v));
         p.setAttribute('aria-pressed', v ? 'true' : 'false');
         var word = v === 2 ? 'accent' : v === 3 ? 'ghost' : v ? 'on' : 'off';
-        p.setAttribute('aria-label', LS.TRACKS[id].label + ' step ' + (i + 1) + ', ' + word);
+        var chance = S.probs && S.probs[id] ? S.probs[id][i] : 100;
+        p.setAttribute('aria-label', LS.TRACKS[id].label + ' step ' + (i + 1) + ', ' + word +
+          (chance < 100 ? ', ' + chance + ' percent chance' : ''));
+        if (chanceMode) {
+          p.textContent = v && chance < 100 ? String(chance) : '';
+          p.classList.toggle('chance', !!v);
+          p.setAttribute('data-chance', String(chance));
+        } else {
+          p.textContent = '';
+          p.classList.remove('chance');
+        }
       }
     });
   }
@@ -385,8 +396,31 @@
     next.focus();
   }
 
+  function setChanceMode(on) {
+    chanceMode = on;
+    var b = document.getElementById('btn-chance');
+    if (b) {
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    document.getElementById('seq').classList.toggle('chance-mode', on);
+    paintSequencer();
+  }
+
+  /* In chance mode a tap cycles how often that step actually fires. */
+  function cycleChance(id, i) {
+    var S = LS.State.data;
+    var cur = S.probs[id][i];
+    var next = cur === 100 ? 75 : cur === 75 ? 50 : cur === 50 ? 25 : 100;
+    S.probs[id][i] = next;
+    paintSequencer();
+    LS.State.saveSoon();
+    toast(next === 100 ? 'Always' : next + '% chance', 'info');
+  }
+
   function toggleStep(id, i) {
     var S = LS.State.data;
+    if (chanceMode) { cycleChance(id, i); return; }
     var on = S.steps[id][i] ? 0 : 1;
     S.steps[id][i] = on;
     S.patternId = null;
@@ -453,6 +487,22 @@
       var f = document.createElement('div');
       wrap.appendChild(f);
 
+      var send = document.createElement('input');
+      send.type = 'range';
+      send.className = 'send';
+      send.min = '0'; send.max = '100'; send.step = '5';
+      send.value = String(LS.State.data.tracks[id].send || 0);
+      send.setAttribute('aria-label', m.label + ' reverb send');
+      send.style.setProperty('--fill', (LS.State.data.tracks[id].send || 0) + '%');
+      send.addEventListener('input', function () {
+        var v = parseInt(send.value, 10);
+        LS.State.data.tracks[id].send = v;
+        send.style.setProperty('--fill', v + '%');
+        LS.Audio.setTrackSend(id, v);
+        LS.State.saveSoon();
+      });
+      wrap.appendChild(labelled('REV', send));
+
       var pan = document.createElement('input');
       pan.type = 'range';
       pan.className = 'pan';
@@ -467,7 +517,7 @@
         LS.Audio.setTrackPan(id, v);
         LS.State.saveSoon();
       });
-      wrap.appendChild(pan);
+      wrap.appendChild(labelled('PAN', pan));
 
       var tools = document.createElement('div');
       tools.className = 'strip-tools';
@@ -488,6 +538,16 @@
         }
       });
     });
+  }
+
+  function labelled(text, control) {
+    var box = document.createElement('div');
+    box.className = 'strip-fx';
+    var lab = document.createElement('span');
+    lab.textContent = text;
+    box.appendChild(lab);
+    box.appendChild(control);
+    return box;
   }
 
   function buildFx() {
@@ -920,6 +980,8 @@
     paintSettings: paintSettings,
     paintHistory: paintHistory,
     renderSong: renderSong,
+    setChanceMode: setChanceMode,
+    isChanceMode: function () { return chanceMode; },
     showSheet: showSheet,
     hideSheet: hideSheet,
     renderPresets: renderPresets,

@@ -10,7 +10,7 @@
   var KEY = 'lofi-studio-v2';
   var PRESET_KEY = 'lofi-presets-v1';
   var MAX_PRESETS = 24;
-  var SNAP_KEYS = ['bpm', 'swing', 'master', 'patternId', 'steps', 'tracks',
+  var SNAP_KEYS = ['bpm', 'swing', 'master', 'patternId', 'steps', 'probs', 'tracks',
                    'vibe', 'fx', 'amb', 'theme'];
   var LEGACY_KEY = 'lofi-studio-v7';
   var SAVE_MS = 400;
@@ -27,7 +27,9 @@
   function defaults() {
     var steps = {}, tracks = {}, amb = {};
     LS.TRACK_IDS.forEach(function (t) { steps[t] = LS.PATTERNS.chillhop.steps[t].slice(); });
-    LS.TRACK_IDS.forEach(function (t) { tracks[t] = { vol: 80, pan: 0, mute: false, solo: false }; });
+    var probs = {};
+    LS.TRACK_IDS.forEach(function (t) { probs[t] = new Array(LS.STEP_COUNT).fill(100); });
+    LS.TRACK_IDS.forEach(function (t) { tracks[t] = { vol: 80, pan: 0, send: 0, mute: false, solo: false }; });
     LS.AMBIENCE_IDS.forEach(function (a) { amb[a] = { on: false, vol: 50 }; });
     return {
       v: 2,
@@ -36,6 +38,7 @@
       master: 80,
       patternId: 'chillhop',
       steps: steps,
+      probs: probs,
       tracks: tracks,
       vibe: 'jazz',
       preset: null,
@@ -89,8 +92,16 @@
             ? row.map(function (x) { var n = parseInt(x, 10); return isFinite(n) ? Math.min(3, Math.max(0, n)) : 0; })
             : new Array(LS.STEP_COUNT).fill(0);
         });
+        var probs = {};
+        LS.TRACK_IDS.forEach(function (t) {
+          var row = slot.probs && slot.probs[t];
+          probs[t] = (Array.isArray(row) && row.length === LS.STEP_COUNT)
+            ? row.map(function (x) { var n = parseInt(x, 10); return isFinite(n) ? Math.min(100, Math.max(0, n)) : 100; })
+            : new Array(LS.STEP_COUNT).fill(100);
+        });
         return {
           steps: steps,
+          probs: probs,
           vibe: oneOf(LS.VIBE_ORDER, slot.vibe, 'jazz'),
           patternId: oneOf(LS.PATTERN_ORDER, slot.patternId, null),
           bars: Math.round(num(slot.bars, 1, 8, 2))
@@ -118,11 +129,23 @@
       }
     });
 
+    var pr = obj(s.probs);
+    LS.TRACK_IDS.forEach(function (t) {
+      var row = pr[t];
+      if (Array.isArray(row) && row.length === LS.STEP_COUNT) {
+        d.probs[t] = row.map(function (x) {
+          var n = parseInt(x, 10);
+          return isFinite(n) ? Math.min(100, Math.max(0, n)) : 100;
+        });
+      }
+    });
+
     var tr = obj(s.tracks);
     LS.TRACK_IDS.forEach(function (t) {
       var r = obj(tr[t]);
       d.tracks[t].vol = Math.round(num(r.vol, 0, 100, d.tracks[t].vol));
       d.tracks[t].pan = Math.round(num(r.pan, -100, 100, 0));
+      d.tracks[t].send = Math.round(num(r.send, 0, 100, 0));
       d.tracks[t].mute = bool(r.mute, false);
       d.tracks[t].solo = bool(r.solo, false);
     });
@@ -333,6 +356,7 @@
       if (i < 0 || i > 3) return null;
       d.song.slots[i] = {
         steps: JSON.parse(JSON.stringify(d.steps)),
+        probs: JSON.parse(JSON.stringify(d.probs)),
         vibe: d.vibe,
         patternId: d.patternId,       // a label, not a link
         bars: 2
@@ -344,6 +368,7 @@
       var slot = State.data.song.slots[i];
       if (!slot) return null;
       State.data.steps = slot.steps;   // the slot becomes the live pattern
+      if (slot.probs) State.data.probs = slot.probs;
       State.data.vibe = slot.vibe;
       State.data.patternId = null;
       return slot;

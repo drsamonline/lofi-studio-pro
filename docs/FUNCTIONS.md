@@ -197,3 +197,12 @@ Legend: **✓** covered by an automated check · **◐** reached indirectly · *
 | `enterSlot(i, first)` | main | Loads a slot and repaints the grid mid-playback | ✓ |
 | `toggleSong()` | main | Loop ↔ Song, refusing to arm with no slots filled | ✓ |
 | `renderSong()` | ui | The four-slot strip and its playing highlight | ✓ |
+
+## Added in 2.8.0
+
+| Function | Where | Purpose | Tested |
+| --- | --- | --- | --- |
+| `setTrackSend(id, v)` | audio | Per-channel reverb send into the convolver | ✓ |
+| chance check in `triggerStep` | audio | A step that is on can still skip, by percentage | ✓ |
+| `setChanceMode(on)` / `cycleChance(id, i)` | ui | The chance mode and its 100 → 75 → 50 → 25 → 100 cycle | ✓ |
+| `labelled(text, control)` | ui | The PAN / REV rows in a mixer strip | ✓ |

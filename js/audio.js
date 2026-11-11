@@ -30,6 +30,7 @@
     mixBus: null,
     analyser: null,
     recorder: null,
+    sends: {},
     crackle: {},
     amb: {},
     seqId: null,
@@ -133,6 +134,11 @@
     A.fx.dry.connect(A.mixBus);
     A.fx.reverbWet.connect(A.mixBus);
 
+    /* Per-track reverb send: each channel can feed the convolver directly,
+       on top of whatever the master chain already sends. */
+    A.sendBus = new Tone.Gain(1);
+    A.sendBus.connect(A.fx.reverb);
+
     buildInstruments();
     buildCrackle();
     buildMetronome();
@@ -146,8 +152,11 @@
 
     T.forEach(function (id) {
       var t = LS.State.data.tracks[id];
-      A.ch[id] = new Tone.Channel({ volume: db(t.vol), mute: t.mute, solo: t.solo })
-        .chain(A.fx.dc);
+      A.ch[id] = new Tone.Channel({ volume: db(t.vol), mute: t.mute, solo: t.solo });
+      A.ch[id].chain(A.fx.dc);
+      A.sends[id] = new Tone.Gain((t.send || 0) / 100 * 0.8);
+      A.ch[id].connect(A.sends[id]);
+      A.sends[id].connect(A.sendBus);
     });
 
     /* ---- kick: membrane with a short pitch drop ---- */
@@ -298,6 +307,7 @@
   }
   function setTrackVol(id, v) { if (A.ready && A.ch[id]) A.ch[id].volume.value = db(v); }
   function setTrackPan(id, v) { if (A.ready && A.ch[id]) A.ch[id].pan.value = Math.max(-1, Math.min(1, v / 100)); }
+  function setTrackSend(id, v) { if (A.ready && A.sends[id]) A.sends[id].gain.value = (v / 100) * 0.8; }
   function setTrackMute(id, m) { if (A.ready && A.ch[id]) A.ch[id].mute = m; }
   function setTrackSolo(id, s) { if (A.ready && A.ch[id]) A.ch[id].solo = s; }
   function setViz(type) { if (A.ready && A.analyser) A.analyser.type = type === 'wave' ? 'waveform' : 'fft'; }
@@ -314,6 +324,7 @@
     LS.TRACK_IDS.forEach(function (t) {
       setTrackVol(t, S.tracks[t].vol);
       setTrackPan(t, S.tracks[t].pan);
+      setTrackSend(t, S.tracks[t].send);
       setTrackMute(t, S.tracks[t].mute);
       setTrackSolo(t, S.tracks[t].solo);
     });
@@ -399,6 +410,9 @@
       var id = LS.TRACK_IDS[t];
       var v = S.steps[id][i];
       if (!v) continue;
+      /* per-step probability: a step that is "on" can still skip */
+      var chance = S.probs && S.probs[id] ? S.probs[id][i] : 100;
+      if (chance < 100 && Math.random() * 100 >= chance) continue;
       var vel = velFor(v);
 
       try {
@@ -679,6 +693,7 @@
         if (n) { try { n.dispose(); } catch (e) {} }
       });
       Object.keys(A.ch).forEach(function (k) { try { A.ch[k].dispose(); } catch (e) {} });
+      Object.keys(A.sends || {}).forEach(function (k) { try { A.sends[k].dispose(); } catch (e) {} });
       Object.keys(A.fx).forEach(function (k) { try { A.fx[k].dispose(); } catch (e) {} });
       ['gain', 'env', 'filter', 'noise', 'hiss', 'hissHP', 'hissLP'].forEach(function (k) {
         if (A.crackle[k]) { try { A.crackle[k].dispose(); } catch (e) {} }
@@ -710,6 +725,7 @@
     setWow: setWow,
     setTrackVol: setTrackVol,
     setTrackPan: setTrackPan,
+    setTrackSend: setTrackSend,
     setTrackMute: setTrackMute,
     setTrackSolo: setTrackSolo,
     setViz: setViz,

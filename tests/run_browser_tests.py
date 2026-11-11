@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Browser test suite for Lofi Studio Pro.
-
-Serves the repository over HTTP, drives it in headless Chromium over the
-DevTools protocol, and prints a PASS/FAIL line per check.
-
-    pip install websocket-client
-    python3 tests/run_browser_tests.py
-
-Needs a Chromium or Chrome binary; set CHROME_BIN if it is not on the
-default path. Exit code is 0 only when every check passes.
-"""
+"""Browser test suite for Lofi Studio Pro."""
 import json, subprocess, threading, time, http.server, socketserver, functools, urllib.request, os, sys
 import websocket
 
@@ -334,6 +324,33 @@ check("help: the sheet lists the gestures", js("document.querySelectorAll('#shor
       js("document.querySelectorAll('#shortcuts kbd').length"))
 js("document.querySelector('#shortcuts [data-close]').click()"); drain(0.2)
 check("help: it closes again", js("document.getElementById('shortcuts').hidden") is True)
+
+# ----------------------------------------------------- chance + reverb send
+js("LS.App.loadPattern('chillhop'); LS.UI.setChanceMode(false)"); drain(0.3)
+js("document.getElementById('btn-chance').click()"); drain(0.3)
+check("chance: the header button enters chance mode",
+      js("LS.UI.isChanceMode()") is True and
+      js("document.getElementById('seq').classList.contains('chance-mode')") is True)
+js("document.querySelectorAll('.pad')[0].click()"); drain(0.3)
+check("chance: tapping a step in chance mode sets 75%", js("LS.State.data.probs.kick[0]") == 75,
+      js("LS.State.data.probs.kick[0]"))
+check("chance: the step is still on", js("LS.State.data.steps.kick[0]") == 1)
+js("document.querySelectorAll('.pad')[0].click()"); drain(0.2)
+js("document.querySelectorAll('.pad')[0].click()"); drain(0.2)
+js("document.querySelectorAll('.pad')[0].click()"); drain(0.3)
+check("chance: cycling returns to always", js("LS.State.data.probs.kick[0]") == 100,
+      js("LS.State.data.probs.kick[0]"))
+js("document.getElementById('btn-chance').click()"); drain(0.2)
+check("chance: leaving chance mode restores step editing",
+      js("LS.UI.isChanceMode()") is False)
+
+sendv = js("""(function(){
+  var el = document.querySelector('#faders .send');
+  el.value = '70'; el.dispatchEvent(new Event('input', {bubbles:true}));
+  return LS.State.data.tracks.kick.send;
+})()""")
+drain(0.2)
+check("mixer: a reverb send slider writes per-track send", sendv == 70, sendv)
 
 # -------------------------------------------------------------------- song
 js("LS.App.loadPattern('chillhop'); LS.App.setVibe('jazz')"); drain(0.4)
