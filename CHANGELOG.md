@@ -2,6 +2,13 @@
 
 All notable changes to Lofi Studio Pro. Versions follow [semver](https://semver.org/).
 
+## 2.4.1 — 11 November 2026
+
+### Fixed
+
+- **The output could clip at full master volume.** The limiter was set to −1 dBFS, but a `Tone.Limiter` is a compressor with a 3 ms attack rather than a brick wall, and a sharp kick overshoots it — measured at **+0.25 dBFS with two clipped samples** on a CI runner. The ceiling is now −2.5 dBFS with the mix bus trimmed to match, so a loud pattern peaks around −3 dBFS and never reaches full scale.
+- **The repository's test runner was stale.** `tests/run_browser_tests.py` was still the 75-check suite from 2.0, so CI had been validating an older contract while the local suite grew to 107. It is generated from the same source now, and the two new checks are what caught the clipping.
+
 ## 2.4.0 — 11 November 2026
 
 Speed, and the last of the small musical gaps.
