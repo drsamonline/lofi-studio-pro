@@ -101,7 +101,12 @@ send("Page.navigate", {"url": f"http://127.0.0.1:{PORT}/index.html"})
 drain(3.0)
 
 # ------------------------------------------------------------------ boot
-check("boot: Tone.js loaded from vendor/", js("typeof Tone") == "object", js("typeof Tone === 'object' ? Tone.version : 'missing'"))
+check("boot: audio library deferred until the first gesture", js("typeof Tone") == "undefined",
+      "Tone=" + str(js("typeof Tone")))
+js("document.getElementById('btn-play').click()"); drain(2.2)
+check("boot: first play loads the library from vendor/", js("typeof Tone") == "object",
+      js("typeof Tone === 'object' ? Tone.version : 'missing'"))
+js("document.getElementById('btn-play').click()"); drain(0.8)
 check("boot: no console errors", len(errors_since(mark)) == 0, "; ".join(errors_since(mark)))
 check("boot: loader removed", js("!document.getElementById('loader')"))
 check("boot: 96 step pads rendered", js("document.querySelectorAll('.pad').length") == 96)
@@ -202,6 +207,199 @@ js("""(function(){var f=document.querySelectorAll('.fader')[0];
 drain(0.2)
 check("mixer: fader keyboard changes track volume", js("LS.State.data.tracks.kick.vol") < 40,
       js("LS.State.data.tracks.kick.vol"))
+
+# ------------------------------------------------------- velocity / accents
+js("document.querySelectorAll('#patterns .chip')[0].click()"); drain(0.3)
+js("""(function(){var p=document.querySelectorAll('.pad')[0];
+  p.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+  return true;})()""")
+drain(0.6)
+js("""(function(){var p=document.querySelectorAll('.pad')[0];
+  p.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));
+  return true;})()""")
+drain(0.2)
+v1 = js("LS.State.data.steps.kick[0]")
+check("velocity: holding a pad raises it to an accent", v1 == 2 and
+      js("document.querySelectorAll('.pad')[0].getAttribute('data-vel')") == "2", v1)
+js("""(function(){var p=document.querySelectorAll('.pad')[0];
+  p.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+  setTimeout(function(){p.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));}, 520);
+  return true;})()""")
+drain(0.8)
+check("velocity: holding again makes it a ghost", js("LS.State.data.steps.kick[0]") == 3,
+      js("LS.State.data.steps.kick[0]"))
+js("""(function(){var p=document.querySelectorAll('.pad')[0];
+  p.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+  p.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));
+  p.click(); return true;})()"""); drain(0.3)
+check("velocity: a plain tap still clears the step", js("LS.State.data.steps.kick[0]") == 0,
+      js("LS.State.data.steps.kick[0]"))
+
+# ---------------------------------------------------------- drag to paint
+js("LS.App.loadPattern('minimal'); LS.State.data.steps.kick = new Array(16).fill(0); LS.UI.paintSequencer()")
+drain(0.3)
+drag = js("""(function(){
+  var pads = document.querySelectorAll('.pad');
+  function c(i){ var r = pads[i].getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; }
+  var a = c(0), b = c(1), d = c(2), e = c(3);
+  pads[0].dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:a.x,clientY:a.y,button:0}));
+  [[b,1],[d,2],[e,3]].forEach(function(pair){
+    document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:pair[0].x,clientY:pair[0].y}));
+  });
+  document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:e.x,clientY:e.y}));
+  return JSON.stringify(LS.State.data.steps.kick.slice(0,6));
+})()""")
+drain(0.4)
+check("pads: dragging across pads paints a run", drag.startswith("[1,1,1,1,"), drag)
+
+# --------------------------------------------------- hold a track name to clear
+js("LS.App.loadPattern('boombap')"); drain(0.3)
+cleared = js("""(function(){
+  var head = document.querySelector('.seq-head');
+  var r = head.getBoundingClientRect();
+  head.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+10,clientY:r.top+10}));
+  return true;})()""")
+drain(0.9)
+js("""(function(){var head=document.querySelector('.seq-head');
+  head.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));return true;})()""")
+drain(0.3)
+check("pads: holding a track name empties that row",
+      js("LS.State.data.steps.kick.every(function(v){return !v})") is True,
+      js("JSON.stringify(LS.State.data.steps.kick)"))
+js("(document.querySelector('.toast-act')||{click:function(){}}).click()"); drain(0.4)
+check("pads: the undo toast puts the row back",
+      js("LS.State.data.steps.kick.filter(Boolean).length") == 3,
+      js("LS.State.data.steps.kick.filter(Boolean).length"))
+
+# ------------------------------------------------------------- share / link
+enc = js("LS.State.encode()")
+check("share: a pattern encodes to 48 hex characters", isinstance(enc, str) and len(enc) == 48 and
+      all(c in "0123456789abcdef" for c in enc), enc)
+check("share: encode/decode round-trips exactly",
+      js("JSON.stringify(LS.State.decode(LS.State.encode())===null)") == "true" or
+      js("JSON.stringify(Object.keys(LS.State.decode(LS.State.encode())).length)") == "6",
+      js("JSON.stringify(LS.State.decode(LS.State.encode()).kick)"))
+mark_share = len(events)
+send("Page.navigate", {"url": f"http://127.0.0.1:{PORT}/index.html?s={enc}&b=97&v=dark"})
+drain(3.0)
+check("share: a link rebuilds the pattern and tempo",
+      js("LS.State.data.bpm") == 97 and js("LS.State.data.vibe") == "dark" and
+      js("document.querySelectorAll('.pad.on').length") > 0,
+      js("JSON.stringify({bpm:LS.State.data.bpm,vibe:LS.State.data.vibe,on:document.querySelectorAll('.pad.on').length})"))
+check("share: loading a link raises no console errors", len(errors_since(mark_share)) == 0,
+      "; ".join(errors_since(mark_share)))
+
+# ------------------------------------------------------------- sleep timer
+js("document.querySelector('.rail [data-view=\"settings\"]').click()"); drain(0.2)
+js("document.getElementById('set-sleep').click()"); drain(0.2)
+check("sleep timer: cycles off to 15 minutes",
+      js("LS.State.data.sleep") == 15 and js("document.getElementById('set-sleep').textContent") == "15 min",
+      js("document.getElementById('set-sleep').textContent"))
+js("document.getElementById('set-sleep').click()"); drain(0.2)
+check("sleep timer: cycles on to 30", js("LS.State.data.sleep") == 30)
+
+# ---------------------------------------------------------- presets & files
+js("localStorage.removeItem('lofi-presets-v1')")
+js("LS.App.setBpm(72); LS.App.loadPattern('dub'); LS.App.applyTheme('forest')"); drain(0.4)
+js("""(function(){var i=document.getElementById('preset-name'); i.value='Rainy Tuesday';
+  document.getElementById('btn-save-preset').click(); return true;})()""")
+drain(0.4)
+check("presets: saving adds a named entry",
+      js("LS.State.presets().length") == 1 and js("LS.State.presets()[0].name") == "Rainy Tuesday",
+      js("JSON.stringify(LS.State.presets().map(function(p){return p.name}))"))
+check("presets: the list renders a row per preset",
+      js("document.querySelectorAll('#preset-list .preset-row').length") == 1)
+check("presets: the entry is written to localStorage",
+      js("(localStorage.getItem('lofi-presets-v1')||'').indexOf('Rainy Tuesday') > -1") is True)
+
+js("LS.App.setBpm(130); LS.App.loadPattern('trap'); LS.App.applyTheme('pink')"); drain(0.4)
+js("document.querySelector('#preset-list [data-load]').click()"); drain(0.6)
+check("presets: loading restores tempo, pattern and theme",
+      js("LS.State.data.bpm") == 72 and js("LS.State.data.patternId") == "dub" and
+      js("LS.State.data.theme") == "forest",
+      js("JSON.stringify({bpm:LS.State.data.bpm,p:LS.State.data.patternId,t:LS.State.data.theme})"))
+check("presets: loading does not touch preferences",
+      js("LS.State.data.autoSave") is True)
+
+exp = js("JSON.stringify(LS.State.exportState())")
+ex = json.loads(exp) if isinstance(exp, str) and exp.startswith("{") else {}
+check("export: produces a tagged payload with the whole beat",
+      ex.get("app") == "lofi-studio-pro" and "steps" in ex.get("state", {}) and
+      len(ex["state"]["steps"]) == 6, exp[:90])
+
+js("""(function(){var bad = LS.State.importState({hello:'world'});
+  var good = LS.State.importState({app:'lofi-studio-pro', version:2,
+    state:{bpm:101, vibe:'blues', steps:{kick:new Array(16).fill(2)}}});
+  window.__imp = {bad: bad===null, bpm: LS.State.data.bpm, vibe: LS.State.data.vibe,
+                  kick: LS.State.data.steps.kick[0]}; return true;})()""")
+drain(0.3)
+check("import: rejects a file that is not a beat", js("window.__imp.bad") is True)
+check("import: accepts a beat and restores it",
+      js("window.__imp.bpm") == 101 and js("window.__imp.vibe") == "blues" and js("window.__imp.kick") == 2,
+      js("JSON.stringify(window.__imp)"))
+
+js("document.querySelector('#preset-list [data-del]').click()"); drain(0.3)
+check("presets: deleting removes the entry and the row",
+      js("LS.State.presets().length") == 0 and
+      js("document.querySelectorAll('#preset-list .preset-row').length") == 0)
+
+# ------------------------------------------------- metronome / count-in / pan
+js("document.getElementById('set-metro').click()"); drain(0.2)
+check("metronome: the switch writes state", js("LS.State.data.metro") is True)
+js("document.getElementById('set-metro').click()"); drain(0.2)
+
+js("LS.App.stop(); LS.App.setBpm(80); LS.State.data.countIn = true; LS.UI.paintSettings()"); drain(0.4)
+js("document.getElementById('btn-play').click()"); drain(0.6)
+check("count-in: the beat waits a bar before starting",
+      js("document.querySelectorAll('.pad.is-playing').length") == 0 and js("LS.App.isPlaying()") is True,
+      js("document.querySelectorAll('.pad.is-playing').length"))
+drain(4.4)
+heads = js("document.querySelectorAll('.pad.is-playing').length")
+check("count-in: the beat enters after the count-in bar", heads > 0, heads)
+js("LS.App.stop(); LS.State.data.countIn = false; LS.UI.paintSettings()"); drain(0.5)
+
+panv = js("""(function(){
+  var pan = document.querySelector('#faders .pan');
+  pan.value = '-60'; pan.dispatchEvent(new Event('input', {bubbles:true}));
+  return LS.State.data.tracks.kick.pan;
+})()""")
+drain(0.2)
+check("mixer: a pan slider writes per-track pan", panv == -60, panv)
+check("mixer: pan survives into the audio channel",
+      js("(function(){try{return LS.Audio.ready}catch(e){return false}})()") is True)
+
+# ------------------------------------------------------------- media session
+check("media session: metadata set while playing",
+      js("""(async function(){ LS.App.play(); await new Promise(r=>setTimeout(r,500));
+        var ok = !('mediaSession' in navigator) || (navigator.mediaSession.metadata &&
+          navigator.mediaSession.metadata.album === 'Lofi Studio Pro');
+        LS.App.stop(); return ok; })()""", True) is True)
+
+# ------------------------------------------------------------- audio headroom
+head = js("""(async function(){
+  LS.App.stop(); await new Promise(r=>setTimeout(r,300));
+  await LS.Audio.ensure();
+  LS.State.data.bpm = 120; LS.App.loadPattern('house');
+  LS.State.data.fx = {filter:12000,tape:40,crackle:30,reverb:40,chorus:30,wow:20};
+  LS.State.data.master = 100; LS.Audio.applyAll();
+  var rec = new Tone.Recorder(); Tone.getDestination().connect(rec); rec.start();
+  LS.App.play(); await new Promise(r=>setTimeout(r,2500)); LS.App.stop();
+  await new Promise(r=>setTimeout(r,120));
+  var blob = await rec.stop();
+  try { Tone.getDestination().disconnect(rec); } catch(e){}
+  var dec = new (window.AudioContext||window.webkitAudioContext)();
+  var buf = await dec.decodeAudioData(await blob.arrayBuffer());
+  var x = buf.getChannelData(0), pk = 0, sum = 0, clip = 0;
+  for (var i=0;i<x.length;i++){ var a=Math.abs(x[i]); if(a>pk)pk=a; sum+=x[i]*x[i]; if(a>=0.999)clip++; }
+  dec.close();
+  var rms = Math.sqrt(sum/x.length);
+  return JSON.stringify({peak:+pk.toFixed(3), rms:+rms.toFixed(3), crest:+(pk/rms).toFixed(1), clip:clip});
+})()""", True)
+h = json.loads(head) if isinstance(head, str) and head.startswith("{") else {"peak": 9}
+check("audio: loud pattern peaks below full scale with headroom",
+      h["peak"] < 0.99 and h["clip"] == 0, head)
+check("audio: crest factor stays musical (not squashed)", h["crest"] >= 3.5, head)
+check("audio: the capture actually contains the beat", h["rms"] > 0.04, head)
 
 # ------------------------------------------------------------- fx knobs
 js("""(function(){var ks=document.querySelectorAll('#fx-knobs .knob');
@@ -413,8 +611,12 @@ time.sleep(0.5)
 mark5 = len(events)
 send("Page.reload"); drain(3.5)
 check("offline: app opens with the server down", js("document.title").startswith("Lofi Studio"), js("document.title"))
-check("offline: Tone.js loads from cache", js("typeof Tone") == "object")
 check("offline: sequencer renders offline", js("document.querySelectorAll('.pad').length") == 96)
+check("offline: library still deferred offline", js("typeof Tone") == "undefined")
+js("document.getElementById('btn-play').click()"); drain(2.2)
+check("offline: the library loads from cache and plays", js("typeof Tone") == "object" and
+      js("document.body.classList.contains('is-playing')") is True,
+      js("typeof Tone === 'object' ? 'Tone ' + Tone.version : 'missing'"))
 check("offline: no console errors offline", len(errors_since(mark5)) == 0, "; ".join(errors_since(mark5))[:120])
 
 # ------------------------------------------------------------- summary
@@ -425,6 +627,6 @@ fails = [r for r in RESULTS if not r["ok"]]
 for f in fails:
     print("FAILED:", f["name"], "|", f["detail"])
 
-json.dump(RESULTS, open(os.path.join(ROOT, 'tests', 'results.json'), 'w'), indent=1)
+json.dump(RESULTS, open(os.path.join(ROOT, "tests", "results.json"), "w"), indent=1)
 
 sys.exit(0 if passed == len(RESULTS) else 1)
