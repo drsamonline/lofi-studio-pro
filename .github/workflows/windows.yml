@@ -30,13 +30,19 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Scaffold the Tauri shell (first run only)
+        # PowerShell DROPS an empty-string argument to a native command, so
+        # `--before-dev-command ""` reached tauri as a flag with no value and the
+        # job died with "a value is required for '--before-dev-command'" before
+        # compiling anything (run 42887482891). The `--flag=` form is a single
+        # non-empty token, so PowerShell passes it through intact and tauri reads
+        # it as the empty string it is.
         run: |
           if (!(Test-Path src-tauri)) {
             npx tauri init --app-name "Lofi Studio Pro" `
               --window-title "Lofi Studio Pro" `
               --frontend-dist "../" `
               --dev-url "http://localhost:8000" `
-              --before-dev-command "" --before-build-command "" --ci
+              --before-dev-command= --before-build-command= --ci
           }
 
       - name: Build
