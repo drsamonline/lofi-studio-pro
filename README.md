@@ -148,13 +148,15 @@ Results: **[docs/TEST-REPORT.md](docs/TEST-REPORT.md)** — 88 passing, 0 failin
 
 The web app is the source of truth; the wrappers are thin and live in CI, so nothing has to be installed locally and no stale binary is ever committed.
 
-| Target | How | Status |
+| Target | How | Built |
 | --- | --- | --- |
-| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor and assembles a debug APK | **Built** — `lofi-studio-pro-2.0.0-debug.apk` (3.8 MB) is attached to the [v2.0.0 release](https://github.com/drsamonline/lofi-studio-pro/releases/tag/v2.0.0) |
-| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2, so the binary stays small) | **Scaffolding** — the workflow has not been run yet; treat the first run as a smoke test |
-| **PWA** | The live site installs to any home screen | **Tested** — this is the build the 75 browser checks run against |
+| **Android** | `.github/workflows/android.yml` wraps the static files with Capacitor | `lofi-studio-pro-2.1.0.apk` (3.8 MB) — debug-signed, so sideload it |
+| **Windows** | `.github/workflows/windows.yml` wraps the same files with Tauri (WebView2) | `Lofi-Studio-Pro-2.1.0-x64-setup.exe` (2.1 MB) and `.msi` (3.0 MB) |
+| **PWA** | The live site installs to any home screen | tested — this is the build the 88 browser checks run against |
 
-The APK is a debug build, signed with the default debug key, so it installs from a file but cannot go to the Play Store as-is. For a release build you need your own keystore; add it as repository secrets and a `signingConfig` to `android/app/build.gradle`.
+All three are attached to the [v2.1.0 release](https://github.com/drsamonline/lofi-studio-pro/releases/tag/v2.1.0). Push a tag and CI rebuilds them from that exact commit.
+
+The Android build is debug-signed, so it installs from a file but cannot go to the Play Store as-is: add your own keystore as repository secrets and a `signingConfig` to `android/app/build.gradle`. The Windows binaries are unsigned, so SmartScreen will warn on first run.
 
 ## Roadmap
 
