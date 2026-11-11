@@ -35,8 +35,7 @@ jobs:
             npx tauri init --app-name "Lofi Studio Pro" `
               --window-title "Lofi Studio Pro" `
               --frontend-dist "../" `
-              --dev-url "http://localhost:8000" `
-              --before-dev-command "" --before-build-command "" --ci
+              --dev-url "http://localhost:8000" --ci
           }
 
       - name: Build
