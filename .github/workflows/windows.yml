@@ -42,8 +42,10 @@ jobs:
         run: |
           $path = "src-tauri/tauri.conf.json"
           $c = Get-Content $path -Raw | ConvertFrom-Json
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
           $c.identifier = "com.drsamonline.lofistudio"
           $c.productName = "Lofi Studio Pro"
+          $c.version = $version
           $c.build.frontendDist = "../dist"
           $c.build.beforeBuildCommand = "node scripts/stage.js"
           $c | ConvertTo-Json -Depth 20 | Set-Content $path -Encoding utf8
@@ -55,9 +57,15 @@ jobs:
       - name: Collect artefacts
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
-          Get-ChildItem -Recurse -Include *.exe,*.msi -Path src-tauri/target/release |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          Get-ChildItem -Recurse -Include *-setup.exe,*.msi -Path src-tauri/target/release |
             Where-Object { $_.FullName -notmatch 'deps|build' } |
-            ForEach-Object { Copy-Item $_.FullName -Destination "out/$($_.Name)" }
+            ForEach-Object {
+              $name = $_.Name -replace '\s', '-' -replace '_x64_en-US', '' -replace '_x64', '-x64'
+              $name = $name -replace '^Lofi-Studio-Pro[^0-9]*[0-9.]+', "Lofi-Studio-Pro-$version"
+              Copy-Item $_.FullName -Destination "out/$name"
+            }
+          Get-ChildItem out | Select-Object Name, Length
 
       - uses: actions/upload-artifact@v4
         with:
